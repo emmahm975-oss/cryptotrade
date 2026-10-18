@@ -559,7 +559,7 @@
             window.location.href = 'login.html';
         }
 
-                       // Poll balance after deposit submitted
+                 // Poll balance after deposit submitted
         let pollInterval = null;
         function startPollingBalance() {
             if (pollInterval) return;
@@ -572,19 +572,22 @@
                         const usdt = Number(balances.USDT || 0);
                         const btc = Number(balances.BTC || 0);
                         const eth = Number(balances.ETH || 0);
-                        
-                        // If they just upgraded to premium, send them to signals
+
+                        // 1. If the user is now premium, go to signals.html
                         if (data.user.plan === 'paid') {
                             window.location.href = 'signals.html';
-                        } 
-                        // If it was a normal deposit, send them to dashboard
-                        else if (usdt > 0 || btc > 0 || eth > 0) {
+                            return;
+                        }
+                        
+                        // 2. If it was a normal deposit and balance went up, go to dashboard
+                        if (usdt > 0 || btc > 0 || eth > 0) {
                             window.location.href = 'dashboard.html';
+                            return;
                         }
                     }
                 } catch (err) {}
-            }, 5000);
-        }
+            }, 3000); // Checks every 3 seconds
+        }              
 
         // Init
         selectCoin('USDT', document.querySelector('.coin-btn.active'));
