@@ -200,9 +200,14 @@
 
     <div class="container">
 
-                <div id="pendingBanner" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
+                        <div id="pendingBanner" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
             ⏳ <strong>Account Pending Approval</strong><br>
             Your account is being reviewed by our team. You'll be able to deposit and trade once approved. This usually takes a few minutes.
+        </div>
+
+        <div id="approvedBanner" style="display:none;background:rgba(14,203,129,.15);border:1px solid rgba(14,203,129,.4);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#0ecb81;font-size:14px;font-weight:700;line-height:1.5;">
+            ✅ <strong>Account Approved!</strong><br>
+            Your account has been approved. You can now deposit, trade, and withdraw.
         </div>
 
         <!-- PORTFOLIO VALUE -->
@@ -291,7 +296,9 @@
         let prices = { BTC: 0, ETH: 0, USDT: 1 };
         let balances = { BTC: 0, ETH: 0, USDT: 0 };
 
-                async function loadMe() {
+                    let lastKnownStatus = null;
+
+        async function loadMe() {
             try {
                 const res = await fetch('/api/me', { headers });
                 if (res.status === 401) {
@@ -305,17 +312,33 @@
                     balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
                     renderBalances();
 
-                    // Show pending banner if user is not active
+                    const pendingEl  = document.getElementById('pendingBanner');
+                    const approvedEl = document.getElementById('approvedBanner');
+
                     if (data.user.status === 'pending') {
-                        document.getElementById('pendingBanner').style.display = 'block';
-                    } else {
-                        document.getElementById('pendingBanner').style.display = 'none';
+                        pendingEl.style.display = 'block';
+                        approvedEl.style.display = 'none';
+                        lastKnownStatus = 'pending';
+                    } else if (data.user.status === 'active') {
+                        // Was pending before? Show the "Approved!" banner
+                        if (lastKnownStatus === 'pending') {
+                            pendingEl.style.display = 'none';
+                            approvedEl.style.display = 'block';
+                            // Hide the success banner after 6 seconds
+                            setTimeout(function () {
+                                approvedEl.style.display = 'none';
+                            }, 6000);
+                        } else {
+                            pendingEl.style.display = 'none';
+                            approvedEl.style.display = 'none';
+                        }
+                        lastKnownStatus = 'active';
                     }
                 }
             } catch (err) {
                 console.error(err);
             }
-        }
+        }    
 
         async function loadPrices() {
             try {
