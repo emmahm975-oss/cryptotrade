@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In — CryptoTrade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh;
+               display: flex; flex-direction: column; }
+
+        .nav {
+            background: #1e2329;
+            border-bottom: 1px solid #2b3139;
+            padding: 16px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-logo {
+            font-size: 22px; font-weight: 900; color: #f0b90b;
+            text-decoration: none;
+        }
+        .nav-link {
+            color: #eaecef; text-decoration: none;
+            padding: 10px 20px; border-radius: 8px;
+            font-size: 14px; font-weight: 700;
+        }
+        .nav-link:hover { background: #2b3139; }
+
+        .main {
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            padding: 40px 20px;
+        }
+        .card {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 20px;
+            padding: 44px 36px 36px;
+            width: 100%; max-width: 420px;
+        }
+        .card h1 {
+            font-size: 26px; font-weight: 900;
+            color: #eaecef; text-align: center;
+            margin-bottom: 8px;
+        }
+        .card .sub {
+            text-align: center; color: #848e9c;
+            font-size: 14px; margin-bottom: 32px;
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-size: 13px; font-weight: 700;
+            color: #848e9c; margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0b0e11;
+            border: 1px solid #2b3139;
+            border-radius: 10px;
+            color: #eaecef;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .form-group input:focus { border-color: #f0b90b; }
+        .form-group input::placeholder { color: #5e6673; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #f0b90b; color: #1e2329;
+            border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 900;
+            letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; margin-top: 8px;
+            transition: opacity .2s, transform .1s;
+        }
+        .submit-btn:hover:not(:disabled) { opacity: 0.92; }
+        .submit-btn:active:not(:disabled) { transform: scale(.99); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .message {
+            display: none;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .message.error {
+            display: block;
+            background: rgba(246,70,93,.1);
+            border: 1px solid rgba(246,70,93,.3);
+            color: #f6465d;
+        }
+
+        .alt-link {
+            text-align: center;
+            font-size: 14px;
+            color: #848e9c;
+            margin-top: 24px;
+        }
+        .alt-link a {
+            color: #f0b90b;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .alt-link a:hover { text-decoration: underline; }
+
+        .footer {
+            background: #1e2329;
+            border-top: 1px solid #2b3139;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #848e9c;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="/" class="nav-logo">CryptoTrade</a>
+        <a href="signup.html" class="nav-link">Sign Up</a>
+    </nav>
+
+    <main class="main">
+        <div class="card">
+            <h1>Log In</h1>
+            <p class="sub">Welcome back to CryptoTrade</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Log In</button>
+            </form>
+
+            <div class="message" id="message"></div>
+
+            <p class="alt-link">Don't have an account? <a href="signup.html">Sign Up</a></p>
+        </div>
+    </main>
+
+    <footer class="footer">© 2026 CryptoTrade</footer>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const msg = document.getElementById('message');
+        const btn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            msg.className = 'message';
+            msg.textContent = '';
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'dashboard.html';
+                } else {
+                    msg.classList.add('error');
+                    msg.textContent = data.error || 'Login failed';
+                    btn.disabled = false;
+                    btn.textContent = 'Log In';
+                }
+            } catch (err) {
+                msg.classList.add('error');
+                msg.textContent = 'Network error. Try again.';
+                btn.disabled = false;
+                btn.textContent = 'Log In';
+            }
+        });
+    </script>
+</body>
+</html>

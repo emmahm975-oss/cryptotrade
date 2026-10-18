@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw — CryptoTrade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh; }
+
+        /* NAV */
+        .nav {
+            background: #1e2329;
+            border-bottom: 1px solid #2b3139;
+            padding: 16px 32px;
+            display: flex; align-items: center; gap: 24px;
+        }
+        .nav-logo { font-size: 22px; font-weight: 900; color: #f0b90b; text-decoration: none; }
+        .nav-links { display: flex; gap: 8px; flex: 1; }
+        .nav-link {
+            color: #848e9c; text-decoration: none;
+            padding: 8px 16px; border-radius: 8px;
+            font-size: 14px; font-weight: 700;
+        }
+        .nav-link:hover, .nav-link.active { background: #2b3139; color: #eaecef; }
+        .nav-user { display: flex; align-items: center; gap: 12px; }
+        .user-email { font-size: 13px; color: #848e9c; }
+        .logout-btn {
+            background: transparent; color: #f6465d;
+            border: 1px solid #2b3139; padding: 8px 16px;
+            border-radius: 8px; font-size: 13px; font-weight: 700;
+            cursor: pointer;
+        }
+        .logout-btn:hover { border-color: #f6465d; }
+
+        .container { max-width: 720px; margin: 0 auto; padding: 32px 24px; }
+
+        .card {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 16px;
+            padding: 28px 26px;
+            margin-bottom: 24px;
+        }
+        .card h2 {
+            font-size: 20px; font-weight: 800;
+            color: #eaecef; margin-bottom: 20px;
+        }
+
+        /* Warning banner */
+        .warning {
+            background: rgba(246,70,93,.1);
+            border: 1px solid rgba(246,70,93,.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #f6465d;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        /* Balance */
+        .balance-box {
+            background: #0b0e11;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .balance-label {
+            font-size: 12px;
+            color: #848e9c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .balance-value {
+            font-size: 22px;
+            font-weight: 900;
+            color: #f0b90b;
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-size: 13px; font-weight: 700;
+            color: #848e9c; margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0b0e11;
+            border: 1px solid #2b3139;
+            border-radius: 10px;
+            color: #eaecef;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #f0b90b;
+        }
+        .form-group input::placeholder { color: #5e6673; }
+
+        .asset-pills {
+            display: flex; gap: 8px; margin-bottom: 18px;
+        }
+        .asset-pill {
+            flex: 1;
+            padding: 14px;
+            background: #0b0e11;
+            border: 2px solid #2b3139;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all .2s;
+        }
+        .asset-pill:hover { border-color: #f0b90b; }
+        .asset-pill.active {
+            border-color: #f0b90b;
+            background: rgba(240,185,11,.08);
+        }
+        .asset-pill .symbol { font-size: 15px; font-weight: 900; color: #eaecef; }
+        .asset-pill .balance { font-size: 11px; color: #848e9c; margin-top: 4px; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #f6465d; color: #fff;
+            border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 900;
+            letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; margin-top: 8px;
+            transition: opacity .2s;
+        }
+        .submit-btn:hover:not(:disabled) { opacity: 0.92; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .message {
+            display: none;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .message.error {
+            display: block;
+            background: rgba(246,70,93,.1);
+            border: 1px solid rgba(246,70,93,.3);
+            color: #f6465d;
+        }
+        .message.success {
+            display: block;
+            background: rgba(14,203,129,.1);
+            border: 1px solid rgba(14,203,129,.3);
+            color: #0ecb81;
+        }
+
+        /* History */
+        .history-item {
+            background: #0b0e11;
+            border: 1px solid #2b3139;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .history-asset { font-weight: 800; color: #eaecef; }
+        .history-meta { font-size: 12px; color: #848e9c; margin-top: 4px; }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge.pending { background: rgba(240,185,11,.15); color: #f0b90b; }
+        .badge.approved { background: rgba(14,203,129,.15); color: #0ecb81; }
+        .badge.rejected { background: rgba(246,70,93,.15); color: #f6465d; }
+        .empty { text-align: center; padding: 30px 20px; color: #848e9c; font-size: 14px; }
+
+        @media (max-width: 600px) {
+            .nav { padding: 14px 16px; flex-wrap: wrap; }
+            .nav-links { display: none; }
+            .user-email { display: none; }
+            .container { padding: 20px 16px; }
+            .card { padding: 22px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="dashboard.html" class="nav-logo">CryptoTrade</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="deposit.html" class="nav-link">Deposit</a>
+            <a href="trade.html" class="nav-link">Trade</a>
+            <a href="withdraw.html" class="nav-link active">Withdraw</a>
+        </div>
+        <div class="nav-user">
+            <span class="user-email" id="userEmail">—</span>
+            <button class="logout-btn" onclick="logout()">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div class="card">
+            <h2>Withdraw Funds</h2>
+
+            <div class="warning">
+                ⚠️ <strong>Important:</strong> Withdrawals are manually processed by our team within 24 hours. Ensure your wallet address is correct — funds sent to the wrong address cannot be recovered.
+            </div>
+
+            <p style="font-size:13px;color:#848e9c;margin-bottom:12px;">Select asset to withdraw:</p>
+            <div class="asset-pills">
+                <div class="asset-pill active" data-asset="USDT" onclick="selectAsset('USDT', this)">
+                    <div class="symbol">USDT</div>
+                    <div class="balance" id="bal-USDT">0.00</div>
+                </div>
+                <div class="asset-pill" data-asset="BTC" onclick="selectAsset('BTC', this)">
+                    <div class="symbol">BTC</div>
+                    <div class="balance" id="bal-BTC">0.000000</div>
+                </div>
+                <div class="asset-pill" data-asset="ETH" onclick="selectAsset('ETH', this)">
+                    <div class="symbol">ETH</div>
+                    <div class="balance" id="bal-ETH">0.000000</div>
+                </div>
+            </div>
+
+            <form id="withdrawForm">
+                <div class="form-group">
+                    <label for="amount">Amount (<span id="assetLabel">USDT</span>)</label>
+                    <input type="number" step="any" id="amount" placeholder="Enter amount" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Your Wallet Address</label>
+                    <input type="text" id="address" placeholder="Paste your wallet address" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="network">Network</label>
+                    <select id="network">
+                        <option value="TRC20">TRC20 (Tron)</option>
+                        <option value="BEP20">BEP20 (BSC)</option>
+                        <option value="ERC20">ERC20 (Ethereum)</option>
+                        <option value="Bitcoin">Bitcoin</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Request Withdrawal</button>
+            </form>
+
+            <div class="message" id="message"></div>
+        </div>
+
+        <div class="card">
+            <h2>Withdrawal History</h2>
+            <div id="historyList">
+                <div class="empty">Loading...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        const headers = { 'Authorization': 'Bearer ' + token };
+
+        let currentAsset = 'USDT';
+        let balances = { USDT: 0, BTC: 0, ETH: 0 };
+
+        function selectAsset(asset, el) {
+            currentAsset = asset;
+            document.querySelectorAll('.asset-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('assetLabel').textContent = asset;
+        }
+
+        async function loadMe() {
+            try {
+                const res = await fetch('/api/me', { headers });
+                const data = await res.json();
+                if (data.ok) {
+                    document.getElementById('userEmail').textContent = data.user.email;
+                    balances = data.user.balances || { USDT: 0, BTC: 0, ETH: 0 };
+                    document.getElementById('bal-USDT').textContent = Number(balances.USDT || 0).toFixed(2);
+                    document.getElementById('bal-BTC').textContent = Number(balances.BTC || 0).toFixed(6);
+                    document.getElementById('bal-ETH').textContent = Number(balances.ETH || 0).toFixed(6);
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        const form = document.getElementById('withdrawForm');
+        const msg = document.getElementById('message');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            msg.className = 'message';
+
+            const amount = document.getElementById('amount').value;
+            const address = document.getElementById('address').value.trim();
+            const network = document.getElementById('network').value;
+            const btn = document.getElementById('submitBtn');
+
+            if (Number(amount) <= 0) {
+                msg.classList.add('error');
+                msg.textContent = 'Enter a valid amount';
+                return;
+            }
+
+            if (Number(amount) > Number(balances[currentAsset] || 0)) {
+                msg.classList.add('error');
+                msg.textContent = 'Insufficient ' + currentAsset + ' balance';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const res = await fetch('/api/withdraw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ asset: currentAsset, amount: Number(amount), address, network })
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    msg.classList.add('success');
+                    msg.textContent = '✅ Withdrawal request submitted! Admin will review and send within 24 hours.';
+                    form.reset();
+                    loadMe();
+                    loadHistory();
+                } else {
+                    msg.classList.add('error');
+                    msg.textContent = data.error || 'Failed to submit';
+                }
+            } catch (err) {
+                msg.classList.add('error');
+                msg.textContent = 'Network error. Try again.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Request Withdrawal';
+            }
+        });
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/withdrawals', { headers });
+                const data = await res.json();
+                const list = document.getElementById('historyList');
+
+                if (!data.ok || !data.withdrawals.length) {
+                    list.innerHTML = '<div class="empty">No withdrawal requests yet.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.withdrawals.map(w => `
+                    <div class="history-item">
+                        <div>
+                            <div class="history-asset">${w.asset} · ${w.network}</div>
+                            <div class="history-meta">${new Date(w.createdAt).toLocaleString()}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-weight:800">${w.amount} ${w.asset}</div>
+                            <span class="badge ${w.status}">${w.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        loadMe();
+        loadHistory();
+    </script>
+</body>
+</html>

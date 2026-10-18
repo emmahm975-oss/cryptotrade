@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTrade — Buy & Sell Crypto</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh; }
+
+        /* ===== NAV ===== */
+        .nav {
+            background: #1e2329;
+            border-bottom: 1px solid #2b3139;
+            padding: 16px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-logo {
+            font-size: 22px; font-weight: 900; color: #f0b90b;
+            letter-spacing: -0.5px;
+        }
+        .nav-links { display: flex; gap: 12px; }
+        .nav-link {
+            color: #eaecef; text-decoration: none;
+            padding: 10px 20px; border-radius: 8px;
+            font-size: 14px; font-weight: 700;
+            transition: background .2s;
+        }
+        .nav-link:hover { background: #2b3139; }
+        .nav-btn {
+            background: #f0b90b; color: #1e2329;
+            padding: 10px 24px; border-radius: 8px;
+            font-size: 14px; font-weight: 800;
+            text-decoration: none; letter-spacing: 0.5px;
+            transition: opacity .2s;
+        }
+        .nav-btn:hover { opacity: 0.92; }
+
+        /* ===== HERO ===== */
+        .hero {
+            max-width: 1200px; margin: 0 auto;
+            padding: 80px 24px 60px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 56px; font-weight: 900;
+            color: #eaecef; line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+        }
+        .hero h1 span { color: #f0b90b; }
+        .hero p {
+            font-size: 18px; color: #848e9c;
+            max-width: 600px; margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+        .hero-cta {
+            display: flex; gap: 16px; justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            background: #f0b90b; color: #1e2329;
+            padding: 18px 40px; border-radius: 12px;
+            font-size: 16px; font-weight: 900;
+            text-decoration: none; letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 8px 24px rgba(240,185,11,.3);
+            transition: transform .1s, opacity .2s;
+        }
+        .btn-primary:hover { opacity: 0.92; }
+        .btn-primary:active { transform: scale(.98); }
+        .btn-outline {
+            background: transparent; color: #eaecef;
+            padding: 18px 40px; border-radius: 12px;
+            font-size: 16px; font-weight: 800;
+            text-decoration: none; letter-spacing: 1px;
+            border: 2px solid #2b3139;
+            text-transform: uppercase;
+            transition: border-color .2s;
+        }
+        .btn-outline:hover { border-color: #f0b90b; }
+
+        /* ===== PRICES ===== */
+        .section {
+            max-width: 1200px; margin: 0 auto;
+            padding: 40px 24px;
+        }
+        .section-title {
+            font-size: 28px; font-weight: 900;
+            color: #eaecef; margin-bottom: 24px;
+            text-align: center;
+        }
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .price-card {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform .2s, border-color .2s;
+        }
+        .price-card:hover {
+            transform: translateY(-3px);
+            border-color: #f0b90b;
+        }
+        .price-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 16px;
+        }
+        .coin-icon {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 900;
+        }
+        .coin-icon.btc { background: #f7931a; color: #fff; }
+        .coin-icon.eth { background: #627eea; color: #fff; }
+        .coin-icon.usdt { background: #26a17b; color: #fff; }
+
+        .coin-name { font-size: 16px; font-weight: 800; }
+        .coin-symbol { font-size: 12px; color: #848e9c; }
+
+        .price-value {
+            font-size: 28px; font-weight: 900; color: #eaecef;
+            letter-spacing: -0.5px;
+        }
+        .price-value .usd { color: #848e9c; font-size: 14px; font-weight: 600; margin-left: 4px; }
+
+        /* ===== FEATURES ===== */
+        .features {
+            max-width: 1200px; margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .feature {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 16px;
+            padding: 28px 24px;
+        }
+        .feature-icon { font-size: 32px; margin-bottom: 14px; }
+        .feature-title {
+            font-size: 17px; font-weight: 800;
+            color: #eaecef; margin-bottom: 8px;
+        }
+        .feature-text {
+            font-size: 14px; color: #848e9c; line-height: 1.6;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: #1e2329;
+            border-top: 1px solid #2b3139;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: #848e9c;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 36px; }
+            .hero p { font-size: 15px; }
+            .btn-primary, .btn-outline { padding: 16px 28px; font-size: 14px; }
+            .nav { padding: 14px 20px; }
+            .nav-logo { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="/" class="nav-logo">CryptoTrade</a>
+        <div class="nav-links">
+            <a href="login.html" class="nav-link">Log In</a>
+            <a href="signup.html" class="nav-btn">Sign Up</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Buy & Sell <span>Crypto</span><br>With Confidence</h1>
+        <p>Trade Bitcoin, Ethereum and USDT with low fees. Instant deposits, secure wallets, 24/7 support.</p>
+        <div class="hero-cta">
+            <a href="signup.html" class="btn-primary">Get Started</a>
+            <a href="login.html" class="btn-outline">Log In</a>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">Live Prices</h2>
+        <div class="price-grid">
+            <div class="price-card">
+                <div class="price-header">
+                    <div class="coin-icon btc">₿</div>
+                    <div>
+                        <div class="coin-name">Bitcoin</div>
+                        <div class="coin-symbol">BTC</div>
+                    </div>
+                </div>
+                <div class="price-value" id="btcPrice">—</div>
+            </div>
+            <div class="price-card">
+                <div class="price-header">
+                    <div class="coin-icon eth">Ξ</div>
+                    <div>
+                        <div class="coin-name">Ethereum</div>
+                        <div class="coin-symbol">ETH</div>
+                    </div>
+                </div>
+                <div class="price-value" id="ethPrice">—</div>
+            </div>
+            <div class="price-card">
+                <div class="price-header">
+                    <div class="coin-icon usdt">₮</div>
+                    <div>
+                        <div class="coin-name">Tether</div>
+                        <div class="coin-symbol">USDT</div>
+                    </div>
+                </div>
+                <div class="price-value">$1.00 <span class="usd">USD</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2 class="section-title">Why CryptoTrade</h2>
+        <div class="features-grid">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Instant Deposits</div>
+                <div class="feature-text">Deposit USDT, BTC or ETH to your account. Approved within minutes by our team.</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-title">Secure Custody</div>
+                <div class="feature-text">Funds are stored safely. Withdraw anytime to your own wallet.</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📈</div>
+                <div class="feature-title">Live Market Data</div>
+                <div class="feature-text">Real-time prices from Binance via Finnhub. Trade at the current market price.</div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        © 2026 CryptoTrade. All rights reserved.
+    </footer>
+
+    <script>
+        async function loadPrices() {
+            try {
+                const res = await fetch('/api/prices');
+                const data = await res.json();
+
+                if (data.BTC) {
+                    document.getElementById('btcPrice').innerHTML =
+                        '$' + data.BTC.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+                        ' <span class="usd">USD</span>';
+                }
+                if (data.ETH) {
+                    document.getElementById('ethPrice').innerHTML =
+                        '$' + data.ETH.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+                        ' <span class="usd">USD</span>';
+                }
+            } catch (err) {
+                console.error('Price load failed:', err);
+            }
+        }
+
+        loadPrices();
+        setInterval(loadPrices, 30000);
+    </script>
+</body>
+</html>

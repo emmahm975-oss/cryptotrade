@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — CryptoTrade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh; }
+
+        /* ===== LOGIN ===== */
+        .login-wrap {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+        }
+        .login-card {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 16px;
+            padding: 40px 32px;
+            width: 100%; max-width: 400px;
+        }
+        .login-card h1 {
+            font-size: 24px; font-weight: 800; color: #f0b90b;
+            margin-bottom: 8px; text-align: center;
+        }
+        .login-card .sub {
+            text-align: center; color: #848e9c; font-size: 13px;
+            margin-bottom: 28px;
+        }
+        .login-card input {
+            width: 100%; padding: 14px 16px;
+            background: #0b0e11; border: 1px solid #2b3139;
+            border-radius: 10px; color: #eaecef; font-size: 14px;
+            outline: none; margin-bottom: 14px;
+            transition: border-color .2s;
+        }
+        .login-card input:focus { border-color: #f0b90b; }
+        .login-card button {
+            width: 100%; padding: 14px;
+            background: #f0b90b; color: #1e2329;
+            border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 800;
+            cursor: pointer; letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: opacity .2s;
+        }
+        .login-card button:hover { opacity: 0.92; }
+        .login-error {
+            display: none; text-align: center; color: #f6465d;
+            font-size: 13px; font-weight: 700; margin-top: 14px;
+        }
+        .login-error.show { display: block; }
+
+        /* ===== PANEL ===== */
+        .panel { display: none; }
+        .panel.show { display: block; }
+
+        .topbar {
+            background: #1e2329;
+            border-bottom: 1px solid #2b3139;
+            padding: 16px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .topbar h1 { font-size: 20px; font-weight: 800; color: #f0b90b; }
+        .topbar .logout {
+            background: transparent; border: 1px solid #2b3139; color: #eaecef;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-size: 13px; font-weight: 700;
+        }
+        .topbar .logout:hover { background: #2b3139; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+        }
+        .tab {
+            padding: 12px 20px;
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 10px;
+            color: #848e9c;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .tab.active {
+            background: #f0b90b;
+            color: #1e2329;
+            border-color: #f0b90b;
+        }
+        .tab:hover:not(.active) { border-color: #f0b90b; color: #eaecef; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .table-wrap {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead {
+            background: #0b0e11;
+            border-bottom: 1px solid #2b3139;
+        }
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 12px;
+            color: #848e9c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #2b3139;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #252a31; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge.pending { background: rgba(240,185,11,.15); color: #f0b90b; }
+        .badge.active  { background: rgba(14,203,129,.15); color: #0ecb81; }
+        .badge.banned  { background: rgba(246,70,93,.15); color: #f6465d; }
+        .badge.approved { background: rgba(14,203,129,.15); color: #0ecb81; }
+        .badge.rejected { background: rgba(246,70,93,.15); color: #f6465d; }
+
+        .btn-approve, .btn-reject {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-right: 6px;
+        }
+        .btn-approve { background: #0ecb81; color: #fff; }
+        .btn-approve:hover { background: #0ba968; }
+        .btn-reject { background: #f6465d; color: #fff; }
+        .btn-reject:hover { background: #d4354b; }
+
+        .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
+
+        .txid {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            color: #848e9c;
+            max-width: 200px;
+            word-break: break-all;
+        }
+
+        .refresh-btn {
+            background: #2b3139; color: #eaecef;
+            border: none; padding: 10px 18px;
+            border-radius: 8px; cursor: pointer;
+            font-size: 13px; font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .refresh-btn:hover { background: #3b424b; }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div class="login-wrap" id="loginWrap">
+        <div class="login-card">
+            <h1>Admin Panel</h1>
+            <p class="sub">CryptoTrade Management</p>
+            <input type="email" id="email" placeholder="Admin Email">
+            <input type="password" id="password" placeholder="Admin Password">
+            <button onclick="adminLogin()">Log In</button>
+            <p class="login-error" id="loginError">Invalid credentials</p>
+        </div>
+    </div>
+
+    <!-- PANEL -->
+    <div class="panel" id="panel">
+        <div class="topbar">
+            <h1>⚙️ CryptoTrade Admin</h1>
+            <button class="logout" onclick="logout()">Log Out</button>
+        </div>
+
+        <div class="container">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('users', this)">👥 Users</div>
+                <div class="tab" onclick="switchTab('deposits', this)">💰 Deposits</div>
+            </div>
+
+            <!-- USERS -->
+            <div class="tab-content active" id="usersTab">
+                <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh</button>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Country</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody">
+                            <tr><td colspan="6" class="empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DEPOSITS -->
+            <div class="tab-content" id="depositsTab">
+                <button class="refresh-btn" onclick="loadDeposits()">🔄 Refresh</button>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Asset</th>
+                                <th>Network</th>
+                                <th>Amount</th>
+                                <th>TXID</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="depositsBody">
+                            <tr><td colspan="7" class="empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let adminToken = localStorage.getItem('adminToken') || '';
+
+        function adminLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const err = document.getElementById('loginError');
+            err.classList.remove('show');
+
+            fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    adminToken = data.adminToken;
+                    localStorage.setItem('adminToken', adminToken);
+                    showPanel();
+                } else {
+                    err.classList.add('show');
+                }
+            })
+            .catch(() => err.classList.add('show'));
+        }
+
+        function showPanel() {
+            document.getElementById('loginWrap').style.display = 'none';
+            document.getElementById('panel').classList.add('show');
+            loadUsers();
+        }
+
+        function logout() {
+            adminToken = '';
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        function switchTab(name, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(name + 'Tab').classList.add('active');
+
+            if (name === 'users') loadUsers();
+            else loadDeposits();
+        }
+
+        function loadUsers() {
+            fetch('/api/admin/users', { headers: { 'x-admin-token': adminToken } })
+                .then(r => r.json())
+                .then(data => {
+                    const body = document.getElementById('usersBody');
+                    if (!data.ok || !data.users.length) {
+                        body.innerHTML = '<tr><td colspan="6" class="empty">No users yet</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = data.users.map(u => `
+                        <tr>
+                            <td>${u.email}</td>
+                            <td>${u.fullName || '-'}</td>
+                            <td>${u.phone || '-'}</td>
+                            <td>${u.country || '-'}</td>
+                            <td><span class="badge ${u.status}">${u.status}</span></td>
+                            <td>
+                                ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
+                                ${u.status !== 'banned' ? `<button class="btn-reject" onclick="banUser('${u._id}')">Ban</button>` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function loadDeposits() {
+            fetch('/api/admin/deposits', { headers: { 'x-admin-token': adminToken } })
+                .then(r => r.json())
+                .then(data => {
+                    const body = document.getElementById('depositsBody');
+                    if (!data.ok || !data.deposits.length) {
+                        body.innerHTML = '<tr><td colspan="7" class="empty">No deposits yet</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = data.deposits.map(d => `
+                        <tr>
+                            <td>${d.email}</td>
+                            <td>${d.asset}</td>
+                            <td>${d.network}</td>
+                            <td>${d.amount}</td>
+                            <td class="txid">${d.txid}</td>
+                            <td><span class="badge ${d.status}">${d.status}</span></td>
+                            <td>
+                                ${d.status === 'pending' ? `
+                                    <button class="btn-approve" onclick="approveDeposit('${d._id}')">Approve</button>
+                                    <button class="btn-reject" onclick="rejectDeposit('${d._id}')">Reject</button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function approveUser(userId) {
+            fetch('/api/admin/approve-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ userId })
+            }).then(() => loadUsers());
+        }
+
+        function banUser(userId) {
+            if (!confirm('Ban this user?')) return;
+            fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ userId })
+            }).then(() => loadUsers());
+        }
+
+        function approveDeposit(depositId) {
+            fetch('/api/admin/approve-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ depositId })
+            }).then(() => loadDeposits());
+        }
+
+        function rejectDeposit(depositId) {
+            if (!confirm('Reject this deposit?')) return;
+            fetch('/api/admin/reject-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ depositId })
+            }).then(() => loadDeposits());
+        }
+
+        // Auto-load if already logged in
+        if (adminToken) {
+            fetch('/api/admin/users', { headers: { 'x-admin-token': adminToken } })
+                .then(r => { if (r.ok) showPanel(); });
+        }
+    </script>
+</body>
+</html>

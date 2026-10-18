@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — CryptoTrade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh; }
+
+        /* ===== NAV ===== */
+        .nav {
+            background: #1e2329;
+            border-bottom: 1px solid #2b3139;
+            padding: 16px 32px;
+            display: flex; align-items: center; gap: 24px;
+        }
+        .nav-logo {
+            font-size: 22px; font-weight: 900; color: #f0b90b;
+            text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 8px; flex: 1; }
+        .nav-link {
+            color: #848e9c; text-decoration: none;
+            padding: 8px 16px; border-radius: 8px;
+            font-size: 14px; font-weight: 700;
+            transition: background .2s, color .2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: #2b3139; color: #eaecef;
+        }
+        .nav-user {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .user-email { font-size: 13px; color: #848e9c; }
+        .logout-btn {
+            background: transparent; color: #f6465d;
+            border: 1px solid #2b3139; padding: 8px 16px;
+            border-radius: 8px; font-size: 13px; font-weight: 700;
+            cursor: pointer;
+        }
+        .logout-btn:hover { border-color: #f6465d; }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+        /* ===== BALANCES ===== */
+        .section-title {
+            font-size: 18px; font-weight: 800;
+            color: #eaecef; margin-bottom: 16px;
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+        .balance-card {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 14px;
+            padding: 22px;
+        }
+        .balance-header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 14px;
+        }
+        .coin-icon {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 900;
+        }
+        .coin-icon.btc { background: #f7931a; color: #fff; }
+        .coin-icon.eth { background: #627eea; color: #fff; }
+        .coin-icon.usdt { background: #26a17b; color: #fff; }
+
+        .balance-coin { font-size: 14px; font-weight: 800; }
+        .balance-amount {
+            font-size: 26px; font-weight: 900;
+            color: #eaecef; letter-spacing: -0.5px;
+        }
+        .balance-usd {
+            font-size: 12px; color: #848e9c;
+            margin-top: 4px;
+        }
+
+        /* ===== ACTIONS ===== */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+        .action-btn {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 12px;
+            padding: 18px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: #eaecef;
+            transition: all .2s;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            border-color: #f0b90b;
+            transform: translateY(-2px);
+        }
+        .action-icon { font-size: 26px; margin-bottom: 8px; }
+        .action-label {
+            font-size: 13px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* ===== PORTFOLIO VALUE ===== */
+        .portfolio-card {
+            background: linear-gradient(135deg, #f0b90b 0%, #f8d12f 100%);
+            border-radius: 16px;
+            padding: 30px;
+            color: #1e2329;
+            margin-bottom: 40px;
+        }
+        .portfolio-label {
+            font-size: 13px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            opacity: 0.8; margin-bottom: 10px;
+        }
+        .portfolio-value {
+            font-size: 42px; font-weight: 900;
+            letter-spacing: -1px;
+        }
+        .portfolio-sub {
+            font-size: 14px; opacity: 0.7;
+            margin-top: 6px;
+        }
+
+        /* ===== TRADES TABLE ===== */
+        .table-wrap {
+            background: #1e2329;
+            border: 1px solid #2b3139;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead {
+            background: #0b0e11;
+            border-bottom: 1px solid #2b3139;
+        }
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 12px;
+            color: #848e9c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #2b3139;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #252a31; }
+
+        .side-buy { color: #0ecb81; font-weight: 800; }
+        .side-sell { color: #f6465d; font-weight: 800; }
+
+        .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
+
+        @media (max-width: 600px) {
+            .nav { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
+            .nav-logo { font-size: 18px; }
+            .nav-links { display: none; }
+            .user-email { display: none; }
+            .container { padding: 20px 16px; }
+            .portfolio-value { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="dashboard.html" class="nav-logo">CryptoTrade</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            <a href="deposit.html" class="nav-link">Deposit</a>
+            <a href="trade.html" class="nav-link">Trade</a>
+            <a href="withdraw.html" class="nav-link">Withdraw</a>
+        </div>
+        <div class="nav-user">
+            <span class="user-email" id="userEmail">—</span>
+            <button class="logout-btn" onclick="logout()">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- PORTFOLIO VALUE -->
+        <div class="portfolio-card">
+            <div class="portfolio-label">Total Portfolio Value</div>
+            <div class="portfolio-value" id="portfolioValue">$0.00</div>
+            <div class="portfolio-sub">USD equivalent</div>
+        </div>
+
+        <!-- BALANCES -->
+        <h2 class="section-title">Your Balances</h2>
+        <div class="balance-grid">
+            <div class="balance-card">
+                <div class="balance-header">
+                    <div class="coin-icon usdt">₮</div>
+                    <div class="balance-coin">USDT</div>
+                </div>
+                <div class="balance-amount" id="balanceUSDT">0</div>
+                <div class="balance-usd" id="balanceUSDTUsd">≈ $0.00</div>
+            </div>
+            <div class="balance-card">
+                <div class="balance-header">
+                    <div class="coin-icon btc">₿</div>
+                    <div class="balance-coin">BTC</div>
+                </div>
+                <div class="balance-amount" id="balanceBTC">0</div>
+                <div class="balance-usd" id="balanceBTCUsd">≈ $0.00</div>
+            </div>
+            <div class="balance-card">
+                <div class="balance-header">
+                    <div class="coin-icon eth">Ξ</div>
+                    <div class="balance-coin">ETH</div>
+                </div>
+                <div class="balance-amount" id="balanceETH">0</div>
+                <div class="balance-usd" id="balanceETHUsd">≈ $0.00</div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="action-grid">
+            <a href="deposit.html" class="action-btn">
+                <div class="action-icon">💰</div>
+                <div class="action-label">Deposit</div>
+            </a>
+            <a href="trade.html" class="action-btn">
+                <div class="action-icon">📊</div>
+                <div class="action-label">Trade</div>
+            </a>
+            <a href="withdraw.html" class="action-btn">
+                <div class="action-icon">💸</div>
+                <div class="action-label">Withdraw</div>
+            </a>
+            <a href="deposit.html" class="action-btn">
+                <div class="action-icon">📜</div>
+                <div class="action-label">History</div>
+            </a>
+        </div>
+
+        <!-- RECENT TRADES -->
+        <h2 class="section-title">Recent Trades</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Asset</th>
+                        <th>Side</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total (USDT)</th>
+                    </tr>
+                </thead>
+                <tbody id="tradesBody">
+                    <tr><td colspan="6" class="empty">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        const headers = { 'Authorization': 'Bearer ' + token };
+        let prices = { BTC: 0, ETH: 0, USDT: 1 };
+        let balances = { BTC: 0, ETH: 0, USDT: 0 };
+
+        async function loadMe() {
+            try {
+                const res = await fetch('/api/me', { headers });
+                if (res.status === 401) {
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const data = await res.json();
+                if (data.ok) {
+                    document.getElementById('userEmail').textContent = data.user.email;
+                    balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
+                    renderBalances();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPrices() {
+            try {
+                const res = await fetch('/api/prices');
+                const data = await res.json();
+                prices = data;
+                renderBalances();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderBalances() {
+            const btc = Number(balances.BTC || 0);
+            const eth = Number(balances.ETH || 0);
+            const usdt = Number(balances.USDT || 0);
+
+            const btcUsd = btc * (prices.BTC || 0);
+            const ethUsd = eth * (prices.ETH || 0);
+            const usdtUsd = usdt * 1;
+
+            document.getElementById('balanceBTC').textContent = btc.toFixed(6);
+            document.getElementById('balanceETH').textContent = eth.toFixed(6);
+            document.getElementById('balanceUSDT').textContent = usdt.toFixed(2);
+
+            document.getElementById('balanceBTCUsd').textContent = '≈ $' + btcUsd.toFixed(2);
+            document.getElementById('balanceETHUsd').textContent = '≈ $' + ethUsd.toFixed(2);
+            document.getElementById('balanceUSDTUsd').textContent = '≈ $' + usdtUsd.toFixed(2);
+
+            const total = btcUsd + ethUsd + usdtUsd;
+            document.getElementById('portfolioValue').textContent = '$' + total.toFixed(2);
+        }
+
+        async function loadTrades() {
+            try {
+                const res = await fetch('/api/trades', { headers });
+                const data = await res.json();
+                const body = document.getElementById('tradesBody');
+
+                if (!data.ok || !data.trades.length) {
+                    body.innerHTML = '<tr><td colspan="6" class="empty">No trades yet. Start trading to see your history.</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = data.trades.map(t => `
+                    <tr>
+                        <td>${new Date(t.createdAt).toLocaleString()}</td>
+                        <td>${t.asset}</td>
+                        <td class="side-${t.side}">${t.side.toUpperCase()}</td>
+                        <td>${Number(t.quantity).toFixed(6)}</td>
+                        <td>$${Number(t.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        <td>$${Number(t.total).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        loadMe();
+        loadPrices();
+        loadTrades();
+        setInterval(() => { loadPrices(); loadMe(); }, 30000);
+    </script>
+</body>
+</html>
