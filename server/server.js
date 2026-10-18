@@ -291,7 +291,6 @@ app.get('/api/me', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) return res.status(404).json({ ok: false });
     
-    // Explicitly structure the response so the frontend polling catches the plan immediately
     res.json({ 
         ok: true, 
         user: {
@@ -759,9 +758,9 @@ app.post('/api/telegram-webhook', async (req, res) => {
             if (d) {
                 const u = await User.findById(d.userId);
                 if (u && d.txid && d.txid.startsWith('PREMIUM:')) {
-                    // IT'S A PREMIUM UPGRADE
+                    // 🚨 UPGRADE TO PREMIUM
                     u.plan = 'paid';
-                    u.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    u.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
                     await u.save();
                     await notifyUser(u, `⭐ <b>Premium activated!</b>\nUntil ${u.planExpiresAt.toDateString()}.`);
                     await pushNotification(u._id, 'premium_activated', `Premium until ${u.planExpiresAt.toDateString()}`);
