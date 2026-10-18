@@ -290,7 +290,24 @@ app.post('/api/login', rateLimit({ max: 10 }), async (req, res) => {
 app.get('/api/me', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) return res.status(404).json({ ok: false });
-    res.json({ ok: true, user });
+    
+    // Explicitly structure the response so the frontend polling catches the plan immediately
+    res.json({ 
+        ok: true, 
+        user: {
+            _id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            country: user.country,
+            status: user.status,
+            telegramId: user.telegramId,
+            balances: user.balances,
+            plan: user.plan || 'free',
+            planExpiresAt: user.planExpiresAt,
+            createdAt: user.createdAt
+        } 
+    });
 });
 
 // ═══════════════════════════════════════════
