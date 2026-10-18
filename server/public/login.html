@@ -184,9 +184,12 @@
                 });
                 const data = await res.json();
 
-                if (data.ok) {
+                                if (data.ok) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'dashboard.html';
+                } else if (data.error === 'Account pending approval') {
+                    // No longer needed — but keep for safety
                     window.location.href = 'dashboard.html';
                 } else {
                     msg.classList.add('error');

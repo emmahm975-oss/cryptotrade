@@ -200,6 +200,11 @@
 
     <div class="container">
 
+                <div id="pendingBanner" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
+            ⏳ <strong>Account Pending Approval</strong><br>
+            Your account is being reviewed by our team. You'll be able to deposit and trade once approved. This usually takes a few minutes.
+        </div>
+
         <!-- PORTFOLIO VALUE -->
         <div class="portfolio-card">
             <div class="portfolio-label">Total Portfolio Value</div>
@@ -286,7 +291,7 @@
         let prices = { BTC: 0, ETH: 0, USDT: 1 };
         let balances = { BTC: 0, ETH: 0, USDT: 0 };
 
-        async function loadMe() {
+                async function loadMe() {
             try {
                 const res = await fetch('/api/me', { headers });
                 if (res.status === 401) {
@@ -299,6 +304,13 @@
                     document.getElementById('userEmail').textContent = data.user.email;
                     balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
                     renderBalances();
+
+                    // Show pending banner if user is not active
+                    if (data.user.status === 'pending') {
+                        document.getElementById('pendingBanner').style.display = 'block';
+                    } else {
+                        document.getElementById('pendingBanner').style.display = 'none';
+                    }
                 }
             } catch (err) {
                 console.error(err);

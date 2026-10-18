@@ -211,14 +211,23 @@ app.post('/api/login', async (req, res) => {
         const user = await User.findOne({ email: (email || '').toLowerCase() });
         if (!user) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
-        if (user.status === 'pending') return res.status(403).json({ ok: false, error: 'Account pending approval' });
-        if (user.status === 'banned') return res.status(403).json({ ok: false, error: 'Account banned' });
+                if (user.status === 'banned') return res.status(403).json({ ok: false, error: 'Account banned' });
+        // NOTE: pending users ARE allowed to log in
 
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ ok: false, error: 'Invalid credentials' });
 
-        const token = signToken(user);
-        res.json({ ok: true, token, user: { email: user.email, fullName: user.fullName, balances: user.balances } });
+                const token = signToken(user);
+        res.json({
+            ok: true,
+            token,
+            user: {
+                email: user.email,
+                fullName: user.fullName,
+                balances: user.balances,
+                status: user.status      // ← add this
+            }
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ ok: false });

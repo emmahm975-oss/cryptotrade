@@ -233,11 +233,9 @@
                 });
                 const data = await res.json();
 
-                if (data.ok) {
-                    msg.classList.add('success');
-                    msg.innerHTML = '✅ Account created!';
-                    form.reset();
-                    btn.textContent = 'Submitted';
+                                if (data.ok) {
+                    // Redirect immediately to login — do NOT show success message
+                    window.location.href = 'login.html';
                 } else {
                     msg.classList.add('error');
                     msg.textContent = data.error || 'Signup failed';
