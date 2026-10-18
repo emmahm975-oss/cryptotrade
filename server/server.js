@@ -12,6 +12,7 @@ const Deposit = require('./models/Deposit');
 const Trade = require('./models/Trade');
 const Withdrawal = require('./models/Withdrawal');
 const Notification = require('./models/Notification');
+const Signal = require('./models/Signal');
 const { signToken, authMiddleware } = require('./auth');
 
 const app = express();
@@ -275,7 +276,9 @@ app.post('/api/login', rateLimit({ max: 10 }), async (req, res) => {
                 fullName: user.fullName,
                 balances: user.balances,
                 status: user.status,
-                telegramId: user.telegramId || null
+                telegramId: user.telegramId || null,
+                plan: user.plan || 'free',
+                planExpiresAt: user.planExpiresAt
             }
         });
     } catch (err) {
@@ -458,6 +461,89 @@ app.post('/api/notifications/read', authMiddleware, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
+// SIGNALS & PREMIUM
+// ═══════════════════════════════════════════
+app.get('/api/signals', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ ok: false });
+
+        const isPaid = user.plan === 'paid' &&
+            (!user.planExpiresAt || user.planExpiresAt > new Date());
+
+        const query = { status: 'active' };
+        let limit = 100;
+
+        if (!isPaid) {
+            query.tier = 'free';
+            query.createdAt = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+            limit = 3;
+        }
+
+        const signals = await Signal.find(query).sort({ createdAt: -1 }).limit(limit);
+        const totalFreeToday = await Signal.countDocuments({
+            tier: 'free',
+            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        });
+
+        res.json({
+            ok: true,
+            plan: isPaid ? 'paid' : 'free',
+            planExpiresAt: user.planExpiresAt,
+            signals,
+            freeTodayTotal: totalFreeToday,
+            freeTodayVisible: isPaid ? null : signals.length
+        });
+    } catch (err) {
+        console.error('Signals error:', err.message);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/premium/upgrade', authMiddleware, async (req, res) => {
+    try {
+        const { txid } = req.body;
+        if (!txid) return res.status(400).json({ ok: false, error: 'TXID required' });
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ ok: false });
+
+        if (user.plan === 'paid' && user.planExpiresAt && user.planExpiresAt > new Date()) {
+            return res.status(400).json({ ok: false, error: 'Already premium' });
+        }
+
+        const deposit = await Deposit.create({
+            userId: user._id,
+            email: user.email,
+            asset: 'USDT',
+            network: 'BEP20',
+            amount: 5,
+            txid: 'PREMIUM:' + String(txid).slice(0, 190)
+        });
+
+        await sendTelegram(
+            '⭐ <b>PREMIUM UPGRADE REQUEST</b>\n' +
+            '━━━━━━━━━━━━━━━━━━━━━━\n' +
+            `\n👤 <b>User:</b> ${user.email}\n` +
+            `💵 <b>Amount:</b> 5 USDT (Premium 30 days)\n` +
+            `\n🆔 <b>TXID:</b>\n<pre><code>${txid}</code></pre>\n` +
+            `\n🕐 ${new Date().toLocaleString()}\n\n<b>Verify then approve:</b>`,
+            {
+                inline_keyboard: [[
+                    { text: '✅ APPROVE', callback_data: `approve_deposit:${deposit._id}` },
+                    { text: '❌ REJECT',  callback_data: `reject_deposit:${deposit._id}` }
+                ]]
+            }
+        );
+
+        res.json({ ok: true, depositId: deposit._id });
+    } catch (err) {
+        console.error('Premium upgrade error:', err.message);
+        res.status(500).json({ ok: false });
+    }
+});
+
+// ═══════════════════════════════════════════
 // ADMIN
 // ═══════════════════════════════════════════
 app.post('/api/admin/login', rateLimit({ max: 5 }), (req, res) => {
@@ -517,6 +603,47 @@ app.delete('/api/admin/delete-user/:userId', adminAuth, async (req, res) => {
     }
 });
 
+// ─── Admin Signals ───
+app.get('/api/admin/signals', adminAuth, async (req, res) => {
+    const list = await Signal.find().sort({ createdAt: -1 }).limit(100);
+    res.json({ ok: true, signals: list });
+});
+
+app.post('/api/admin/signals', adminAuth, async (req, res) => {
+    try {
+        const { pair, side, entry, tp, sl, tier, reason } = req.body;
+        if (!pair || !side || entry == null || tp == null || sl == null) {
+            return res.status(400).json({ ok: false, error: 'Missing fields' });
+        }
+        if (!['buy', 'sell'].includes(side)) {
+            return res.status(400).json({ ok: false, error: 'Invalid side' });
+        }
+
+        const signal = await Signal.create({
+            pair: String(pair).toUpperCase(),
+            side,
+            entry: Number(entry),
+            tp: Number(tp),
+            sl: Number(sl),
+            tier: tier === 'paid' ? 'paid' : 'free',
+            source: 'manual',
+            reason: String(reason || '').slice(0, 300),
+            createdBy: 'admin'
+        });
+
+        res.json({ ok: true, signal });
+    } catch (err) {
+        console.error('Create signal error:', err.message);
+        res.status(500).json({ ok: false });
+    }
+});
+
+app.post('/api/admin/signals/cancel', adminAuth, async (req, res) => {
+    await Signal.findByIdAndUpdate(req.body.signalId, { status: 'cancelled' });
+    res.json({ ok: true });
+});
+
+// ─── Admin Deposits ───
 app.get('/api/admin/deposits', adminAuth, async (req, res) => {
     const list = await Deposit.find().sort({ createdAt: -1 });
     res.json({ ok: true, deposits: list });
@@ -530,12 +657,26 @@ app.post('/api/admin/approve-deposit', adminAuth, async (req, res) => {
     );
     if (!d) return res.status(400).json({ ok: false, error: 'Not pending' });
 
-    await User.updateOne({ _id: d.userId }, { $inc: { [`balances.${d.asset}`]: d.amount } });
     const u = await User.findById(d.userId);
-    if (u) {
-        await notifyUser(u, `💰 <b>Deposit approved</b>\n+${d.amount} ${d.asset} credited to your balance.`);
-        await pushNotification(u._id, 'deposit_approved', `Deposit approved: +${d.amount} ${d.asset}`);
+    if (!u) return res.status(404).json({ ok: false });
+
+    // Premium check
+    if (d.txid && d.txid.startsWith('PREMIUM:')) {
+        u.plan = 'paid';
+        u.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        await u.save();
+
+        await notifyUser(u, `⭐ <b>Premium activated!</b>\nYou have unlimited signals until ${u.planExpiresAt.toDateString()}.`);
+        await pushNotification(u._id, 'premium_activated', `Premium active until ${u.planExpiresAt.toDateString()}`);
+
+        return res.json({ ok: true, premium: true });
     }
+
+    // Normal deposit
+    await User.updateOne({ _id: d.userId }, { $inc: { [`balances.${d.asset}`]: d.amount } });
+    await notifyUser(u, `💰 <b>Deposit approved</b>\n+${d.amount} ${d.asset} credited to your balance.`);
+    await pushNotification(u._id, 'deposit_approved', `Deposit approved: +${d.amount} ${d.asset}`);
+
     res.json({ ok: true });
 });
 
@@ -555,6 +696,7 @@ app.post('/api/admin/reject-deposit', adminAuth, async (req, res) => {
     res.json({ ok: true });
 });
 
+// ─── Admin Withdrawals ───
 app.get('/api/admin/withdrawals', adminAuth, async (req, res) => {
     const list = await Withdrawal.find().sort({ createdAt: -1 });
     res.json({ ok: true, withdrawals: list });
@@ -636,13 +778,20 @@ app.post('/api/telegram-webhook', async (req, res) => {
                 { new: true }
             );
             if (d) {
-                await User.updateOne({ _id: d.userId }, { $inc: { [`balances.${d.asset}`]: d.amount } });
                 const u = await User.findById(d.userId);
-                if (u) {
+                if (u && d.txid && d.txid.startsWith('PREMIUM:')) {
+                    u.plan = 'paid';
+                    u.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    await u.save();
+                    await notifyUser(u, `⭐ <b>Premium activated!</b>\nUntil ${u.planExpiresAt.toDateString()}.`);
+                    await pushNotification(u._id, 'premium_activated', `Premium until ${u.planExpiresAt.toDateString()}`);
+                    replyText = `⭐ PREMIUM ACTIVATED — ${u.email}`;
+                } else if (u) {
+                    await User.updateOne({ _id: d.userId }, { $inc: { [`balances.${d.asset}`]: d.amount } });
                     await notifyUser(u, `💰 <b>Deposit approved</b>\n+${d.amount} ${d.asset} credited.`);
                     await pushNotification(u._id, 'deposit_approved', `Deposit approved: +${d.amount} ${d.asset}`);
+                    replyText = `✅ DEPOSIT APPROVED — ${d.amount} ${d.asset}`;
                 }
-                replyText = `✅ DEPOSIT APPROVED — ${d.amount} ${d.asset}`;
             } else {
                 replyText = '⚠️ Deposit already processed';
             }
@@ -726,6 +875,21 @@ app.use((err, req, res, next) => {
 // ─── START ───
 const PORT = process.env.PORT || 3000;
 let server;
+
+// Cron: auto-downgrade expired premium users
+setInterval(async () => {
+    try {
+        const result = await User.updateMany(
+            { plan: 'paid', planExpiresAt: { $lt: new Date() } },
+            { $set: { plan: 'free', planExpiresAt: null } }
+        );
+        if (result.modifiedCount > 0) {
+            console.log(`⬇️ Downgraded ${result.modifiedCount} expired premium users`);
+        }
+    } catch (err) {
+        console.error('Downgrade cron error:', err.message);
+    }
+}, 60 * 60 * 1000).unref(); // every hour
 
 mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 10000,
