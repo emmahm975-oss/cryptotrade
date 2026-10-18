@@ -75,13 +75,13 @@
 
         .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px;}
         .tab {
             padding: 12px 20px;
             background: #1e2329; border: 1px solid #2b3139;
             border-radius: 10px; color: #848e9c;
             font-size: 14px; font-weight: 700;
-            cursor: pointer; transition: all .2s;
+            cursor: pointer; transition: all .2s; white-space: nowrap;
         }
         .tab.active { background: #f0b90b; color: #1e2329; border-color: #f0b90b; }
         .tab:hover:not(.active) { border-color: #f0b90b; color: #eaecef; }
@@ -122,6 +122,8 @@
         .badge.banned  { background: rgba(246,70,93,.15); color: #f6465d; }
         .badge.approved { background: rgba(14,203,129,.15); color: #0ecb81; }
         .badge.rejected { background: rgba(246,70,93,.15); color: #f6465d; }
+        .badge.paid { background: rgba(240,185,11,.15); color: #f0b90b; }
+        .badge.free { background: rgba(132,142,156,.15); color: #848e9c; }
 
         .btn-approve, .btn-reject {
             padding: 6px 12px; border-radius: 6px;
@@ -135,7 +137,7 @@
         .btn-reject:hover { background: #d4354b; }
 
         .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
-        .txid { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; color: #848e9c; max-width: 200px; word-break: break-all; }
+        .txid { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; color: #848e9c; max-width: 200px; word-break: break-all; white-space: normal;}
 
         .refresh-btn {
             background: #2b3139; color: #eaecef;
@@ -145,6 +147,21 @@
             margin-bottom: 16px;
         }
         .refresh-btn:hover { background: #3b424b; }
+
+        /* Signal Form */
+        .signal-form {
+            background: #1e2329; border: 1px solid #2b3139; border-radius: 14px;
+            padding: 20px; margin-bottom: 24px;
+            display: flex; flex-wrap: wrap; gap: 12px;
+        }
+        .signal-form input, .signal-form select {
+            background: #0b0e11; border: 1px solid #2b3139; color: #eaecef;
+            padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none;
+        }
+        .signal-form input:focus, .signal-form select:focus { border-color: #f0b90b; }
+        .signal-form input { flex: 1; min-width: 120px; }
+        .signal-form select { width: 120px; }
+        .signal-form button { width: auto; padding: 10px 20px; }
 
         /* ===== MOBILE RESPONSIVE TABLE ===== */
         @media (max-width: 768px) {
@@ -174,6 +191,8 @@
                 text-align: left;
             }
             td:last-child::before { content: ''; }
+            .signal-form { flex-direction: column; }
+            .signal-form select { width: 100%; }
         }
     </style>
 </head>
@@ -200,8 +219,11 @@
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('users', this)">👥 Users</div>
                 <div class="tab" onclick="switchTab('deposits', this)">💰 Deposits</div>
+                <div class="tab" onclick="switchTab('withdrawals', this)">💸 Withdrawals</div>
+                <div class="tab" onclick="switchTab('signals', this)">📈 Signals</div>
             </div>
 
+            <!-- USERS TAB -->
             <div class="tab-content active" id="usersTab">
                 <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh</button>
                 <div class="table-wrap">
@@ -210,19 +232,19 @@
                             <tr>
                                 <th>Email</th>
                                 <th>Name</th>
-                                <th>Phone</th>
-                                <th>Country</th>
+                                <th>Plan</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="usersBody">
-                            <tr><td colspan="6" class="empty">Loading...</td></tr>
+                            <tr><td colspan="5" class="empty">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- DEPOSITS TAB -->
             <div class="tab-content" id="depositsTab">
                 <button class="refresh-btn" onclick="loadDeposits()">🔄 Refresh</button>
                 <div class="table-wrap">
@@ -231,7 +253,6 @@
                             <tr>
                                 <th>User</th>
                                 <th>Asset</th>
-                                <th>Network</th>
                                 <th>Amount</th>
                                 <th>TXID</th>
                                 <th>Status</th>
@@ -239,11 +260,73 @@
                             </tr>
                         </thead>
                         <tbody id="depositsBody">
-                            <tr><td colspan="7" class="empty">Loading...</td></tr>
+                            <tr><td colspan="6" class="empty">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- WITHDRAWALS TAB -->
+            <div class="tab-content" id="withdrawalsTab">
+                <button class="refresh-btn" onclick="loadWithdrawals()">🔄 Refresh</button>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Asset</th>
+                                <th>Amount</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawalsBody">
+                            <tr><td colspan="6" class="empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SIGNALS TAB -->
+            <div class="tab-content" id="signalsTab">
+                <div class="signal-form">
+                    <input type="text" id="sPair" placeholder="Pair (e.g. BTCUSDT)" required>
+                    <select id="sSide">
+                        <option value="buy">BUY</option>
+                        <option value="sell">SELL</option>
+                    </select>
+                    <select id="sTier">
+                        <option value="free">FREE</option>
+                        <option value="paid">PAID</option>
+                    </select>
+                    <input type="number" id="sEntry" step="any" placeholder="Entry" required>
+                    <input type="number" id="sTp" step="any" placeholder="TP" required>
+                    <input type="number" id="sSl" step="any" placeholder="SL" required>
+                    <button class="btn-approve" onclick="createSignal()">Post Signal</button>
+                </div>
+                <button class="refresh-btn" onclick="loadSignals()">🔄 Refresh</button>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pair</th>
+                                <th>Side</th>
+                                <th>Entry</th>
+                                <th>TP</th>
+                                <th>SL</th>
+                                <th>Tier</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="signalsBody">
+                            <tr><td colspan="8" class="empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -293,57 +376,31 @@
             document.getElementById(name + 'Tab').classList.add('active');
 
             if (name === 'users') loadUsers();
-            else loadDeposits();
+            else if (name === 'deposits') loadDeposits();
+            else if (name === 'withdrawals') loadWithdrawals();
+            else if (name === 'signals') loadSignals();
         }
 
+        // ─── USERS ───
         function loadUsers() {
             fetch('/api/admin/users', { headers: { 'x-admin-token': adminToken } })
                 .then(r => r.json())
                 .then(data => {
                     const body = document.getElementById('usersBody');
                     if (!data.ok || !data.users.length) {
-                        body.innerHTML = '<tr><td colspan="6" class="empty">No users yet</td></tr>';
+                        body.innerHTML = '<tr><td colspan="5" class="empty">No users yet</td></tr>';
                         return;
                     }
                     body.innerHTML = data.users.map(u => `
                         <tr>
                             <td data-label="Email">${u.email}</td>
                             <td data-label="Name">${u.fullName || '-'}</td>
-                            <td data-label="Phone">${u.phone || '-'}</td>
-                            <td data-label="Country">${u.country || '-'}</td>
+                            <td data-label="Plan"><span class="badge ${u.plan || 'free'}">${(u.plan || 'free').toUpperCase()}</span></td>
                             <td data-label="Status"><span class="badge ${u.status}">${u.status}</span></td>
                             <td data-label="Actions">
                                 ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
                                 ${u.status !== 'banned' ? `<button class="btn-reject" onclick="banUser('${u._id}')">Ban</button>` : ''}
                                 <button class="btn-reject" onclick="deleteUser('${u._id}', '${u.email}')">🗑️ Delete</button>
-                            </td>
-                        </tr>
-                    `).join('');
-                });
-        }
-
-        function loadDeposits() {
-            fetch('/api/admin/deposits', { headers: { 'x-admin-token': adminToken } })
-                .then(r => r.json())
-                .then(data => {
-                    const body = document.getElementById('depositsBody');
-                    if (!data.ok || !data.deposits.length) {
-                        body.innerHTML = '<tr><td colspan="7" class="empty">No deposits yet</td></tr>';
-                        return;
-                    }
-                    body.innerHTML = data.deposits.map(d => `
-                        <tr>
-                            <td data-label="User">${d.email}</td>
-                            <td data-label="Asset">${d.asset}</td>
-                            <td data-label="Network">${d.network}</td>
-                            <td data-label="Amount">${d.amount}</td>
-                            <td data-label="TXID" class="txid">${d.txid}</td>
-                            <td data-label="Status"><span class="badge ${d.status}">${d.status}</span></td>
-                            <td data-label="Actions">
-                                ${d.status === 'pending' ? `
-                                    <button class="btn-approve" onclick="approveDeposit('${d._id}')">Approve</button>
-                                    <button class="btn-reject" onclick="rejectDeposit('${d._id}')">Reject</button>
-                                ` : ''}
                             </td>
                         </tr>
                     `).join('');
@@ -368,22 +425,41 @@
         }
 
         function deleteUser(userId, email) {
-            if (!confirm('⚠️ DELETE user ' + email + ' permanently?\n\nThis will remove:\n- The user\n- All deposits\n- All trades\n- All withdrawals\n\nThis cannot be undone.')) return;
-
+            if (!confirm('⚠️ DELETE user ' + email + ' permanently?')) return;
             fetch('/api/admin/delete-user/' + userId, {
                 method: 'DELETE',
                 headers: { 'x-admin-token': adminToken }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.ok) {
-                    alert('User deleted: ' + email);
-                    loadUsers();
-                } else {
-                    alert('Delete failed');
-                }
-            })
-            .catch(err => alert('Error: ' + err.message));
+            }).then(r => r.json()).then(data => {
+                if (data.ok) { alert('User deleted'); loadUsers(); }
+            });
+        }
+
+        // ─── DEPOSITS ───
+        function loadDeposits() {
+            fetch('/api/admin/deposits', { headers: { 'x-admin-token': adminToken } })
+                .then(r => r.json())
+                .then(data => {
+                    const body = document.getElementById('depositsBody');
+                    if (!data.ok || !data.deposits.length) {
+                        body.innerHTML = '<tr><td colspan="6" class="empty">No deposits yet</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = data.deposits.map(d => `
+                        <tr>
+                            <td data-label="User">${d.email}</td>
+                            <td data-label="Asset">${d.asset}</td>
+                            <td data-label="Amount">${d.amount}</td>
+                            <td data-label="TXID" class="txid">${d.txid}</td>
+                            <td data-label="Status"><span class="badge ${d.status}">${d.status}</span></td>
+                            <td data-label="Actions">
+                                ${d.status === 'pending' ? `
+                                    <button class="btn-approve" onclick="approveDeposit('${d._id}')">Approve</button>
+                                    <button class="btn-reject" onclick="rejectDeposit('${d._id}')">Reject</button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
         }
 
         function approveDeposit(depositId) {
@@ -403,6 +479,116 @@
             }).then(() => loadDeposits());
         }
 
+        // ─── WITHDRAWALS ───
+        function loadWithdrawals() {
+            fetch('/api/admin/withdrawals', { headers: { 'x-admin-token': adminToken } })
+                .then(r => r.json())
+                .then(data => {
+                    const body = document.getElementById('withdrawalsBody');
+                    if (!data.ok || !data.withdrawals.length) {
+                        body.innerHTML = '<tr><td colspan="6" class="empty">No withdrawals yet</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = data.withdrawals.map(w => `
+                        <tr>
+                            <td data-label="User">${w.email}</td>
+                            <td data-label="Asset">${w.asset}</td>
+                            <td data-label="Amount">${w.amount}</td>
+                            <td data-label="Address" class="txid">${w.address}</td>
+                            <td data-label="Status"><span class="badge ${w.status}">${w.status}</span></td>
+                            <td data-label="Actions">
+                                ${w.status === 'pending' ? `
+                                    <button class="btn-approve" onclick="approveWithdrawal('${w._id}')">Approve</button>
+                                    <button class="btn-reject" onclick="rejectWithdrawal('${w._id}')">Reject</button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function approveWithdrawal(id) {
+            fetch('/api/admin/approve-withdrawal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ withdrawalId: id })
+            }).then(() => loadWithdrawals());
+        }
+
+        function rejectWithdrawal(id) {
+            if (!confirm('Reject this withdrawal? Funds will be refunded.')) return;
+            fetch('/api/admin/reject-withdrawal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ withdrawalId: id })
+            }).then(() => loadWithdrawals());
+        }
+
+        // ─── SIGNALS ───
+        function loadSignals() {
+            fetch('/api/admin/signals', { headers: { 'x-admin-token': adminToken } })
+                .then(r => r.json())
+                .then(data => {
+                    const body = document.getElementById('signalsBody');
+                    if (!data.ok || !data.signals.length) {
+                        body.innerHTML = '<tr><td colspan="8" class="empty">No signals yet</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = data.signals.map(s => `
+                        <tr>
+                            <td data-label="Pair"><b>${s.pair}</b></td>
+                            <td data-label="Side" style="color:${s.side === 'buy' ? '#0ecb81' : '#f6465d'}; font-weight:800;">${s.side.toUpperCase()}</td>
+                            <td data-label="Entry">${s.entry}</td>
+                            <td data-label="TP" style="color:#0ecb81">${s.tp}</td>
+                            <td data-label="SL" style="color:#f6465d">${s.sl}</td>
+                            <td data-label="Tier"><span class="badge ${s.tier}">${s.tier.toUpperCase()}</span></td>
+                            <td data-label="Status"><span class="badge ${s.status === 'active' ? 'active' : 'rejected'}">${s.status}</span></td>
+                            <td data-label="Actions">
+                                ${s.status === 'active' ? `<button class="btn-reject" onclick="cancelSignal('${s._id}')">Cancel</button>` : '—'}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function createSignal() {
+            const pair = document.getElementById('sPair').value.trim();
+            const side = document.getElementById('sSide').value;
+            const tier = document.getElementById('sTier').value;
+            const entry = Number(document.getElementById('sEntry').value);
+            const tp = Number(document.getElementById('sTp').value);
+            const sl = Number(document.getElementById('sSl').value);
+
+            if (!pair || !entry || !tp || !sl) return alert('Please fill all fields');
+
+            fetch('/api/admin/signals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ pair, side, tier, entry, tp, sl })
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    alert('Signal Posted!');
+                    document.getElementById('sPair').value = '';
+                    document.getElementById('sEntry').value = '';
+                    document.getElementById('sTp').value = '';
+                    document.getElementById('sSl').value = '';
+                    loadSignals();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to create'));
+                }
+            });
+        }
+
+        function cancelSignal(id) {
+            if (!confirm('Cancel this signal?')) return;
+            fetch('/api/admin/signals/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+                body: JSON.stringify({ signalId: id })
+            }).then(() => loadSignals());
+        }
+
+        // Init
         if (adminToken) {
             fetch('/api/admin/users', { headers: { 'x-admin-token': adminToken } })
                 .then(r => { if (r.ok) showPanel(); });
