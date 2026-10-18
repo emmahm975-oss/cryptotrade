@@ -43,6 +43,14 @@
 
         .container { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
 
+        /* NEW: PREMIUM BANNER */
+        .premium-banner {
+            display: none; background: rgba(240,185,11,.1); border: 1px solid rgba(240,185,11,.3);
+            border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
+            color: #f0b90b; font-size: 14px; font-weight: 700; line-height: 1.5;
+        }
+        .premium-banner.show { display: block; }
+
         .card {
             background: #1e2329;
             border: 1px solid #2b3139;
@@ -184,6 +192,7 @@
         }
         .form-group input:focus { border-color: #f0b90b; }
         .form-group input::placeholder { color: #5e6673; }
+        .form-group input:read-only { background: #15191e; color: #848e9c; cursor: not-allowed; }
 
         .submit-btn {
             width: 100%;
@@ -271,6 +280,8 @@
             <a href="deposit.html" class="nav-link active">Deposit</a>
             <a href="trade.html" class="nav-link">Trade</a>
             <a href="withdraw.html" class="nav-link">Withdraw</a>
+            <!-- NEW: Signals Link -->
+            <a href="signals.html" class="nav-link">Signals</a> 
         </div>
         <div class="nav-user">
             <span class="user-email" id="userEmail">—</span>
@@ -279,6 +290,11 @@
     </nav>
 
     <div class="container">
+
+        <!-- NEW: PREMIUM BANNER -->
+        <div class="premium-banner" id="premiumBanner">
+            ⭐ <b>Premium Upgrade:</b> You are purchasing 30 days of Premium access. Please send exactly <b>5 USDT</b> to the address below.
+        </div>
 
         <!-- STEP 1: Coin Select -->
         <div class="card">
@@ -333,7 +349,7 @@
                 After sending, paste the <strong style="color:#eaecef">Transaction ID (TXID)</strong> from your sending wallet or exchange.
             </p>
 
-                        <div id="formView">
+            <div id="formView">
                 <form id="depositForm">
                     <div class="form-group">
                         <label for="amount">Amount Sent</label>
@@ -373,6 +389,10 @@
 
         const headers = { 'Authorization': 'Bearer ' + token };
 
+        // NEW: Check if they came from the Premium upgrade button
+        const urlParams = new URLSearchParams(window.location.search);
+        const isPremium = urlParams.get('premium') === 'true';
+
         const ADDRESSES = {
             USDT: {
                 TRC20: 'TUmVWEEwRTkSiRcxApZ9uMti7WXerzexU1',
@@ -390,6 +410,8 @@
         let currentNetwork = 'TRC20';
 
         function selectCoin(coin, el) {
+            if (isPremium && coin !== 'USDT') return; // Force USDT for premium
+
             currentCoin = coin;
 
             document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('active'));
@@ -457,8 +479,13 @@
             msg.className = 'message';
 
             const amount = document.getElementById('amount').value;
-            const txid = document.getElementById('txid').value.trim();
+            let txid = document.getElementById('txid').value.trim();
             const btn = document.getElementById('submitBtn');
+
+            // 🚨 NEW: Tag the TXID if it's a premium upgrade
+            if (isPremium) {
+                txid = 'PREMIUM:' + txid;
+            }
 
             btn.disabled = true;
             btn.textContent = 'Submitting...';
@@ -474,12 +501,12 @@
                         asset: currentCoin,
                         network: currentNetwork,
                         amount: Number(amount),
-                        txid
+                        txid: txid
                     })
                 });
                 const data = await res.json();
 
-                                if (data.ok) {
+                if (data.ok) {
                     document.getElementById('formView').style.display = 'none';
                     document.getElementById('loadingView').style.display = 'block';
                     startPollingBalance();
@@ -532,7 +559,7 @@
             window.location.href = 'login.html';
         }
 
-               // Poll balance after deposit submitted
+        // Poll balance after deposit submitted
         let pollInterval = null;
         function startPollingBalance() {
             if (pollInterval) return;
@@ -545,8 +572,9 @@
                         const usdt = Number(balances.USDT || 0);
                         const btc = Number(balances.BTC || 0);
                         const eth = Number(balances.ETH || 0);
-                        if (usdt > 0 || btc > 0 || eth > 0) {
-                            // balance updated — redirect to dashboard
+                        
+                        // Check if balance increased OR if plan changed to paid
+                        if (usdt > 0 || btc > 0 || eth > 0 || data.user.plan === 'paid') {
                             window.location.href = 'dashboard.html';
                         }
                     }
@@ -557,6 +585,24 @@
         // Init
         selectCoin('USDT', document.querySelector('.coin-btn.active'));
         loadHistory();
+
+        // 🚨 NEW: Lock the form if it's a premium upgrade
+        if (isPremium) {
+            document.getElementById('premiumBanner').classList.add('show');
+            
+            // Lock the amount to 5
+            const amountInput = document.getElementById('amount');
+            amountInput.value = '5';
+            amountInput.readOnly = true;
+            
+            // Visually disable BTC and ETH
+            document.querySelectorAll('.coin-btn').forEach(btn => {
+                if (btn.dataset.coin !== 'USDT') {
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+            });
+        }
     </script> 
 </body>
 </html>

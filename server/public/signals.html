@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Signals — CryptoTrade</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box;
@@ -87,29 +87,6 @@
 
         .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
 
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center;
-            z-index: 1000; padding: 20px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: #1e2329; border: 1px solid #2b3139; border-radius: 16px;
-            width: 100%; max-width: 450px; padding: 28px;
-        }
-        .modal h2 { font-size: 22px; margin-bottom: 8px; color: #f0b90b; }
-        .modal p { font-size: 14px; color: #848e9c; margin-bottom: 20px; line-height: 1.5; }
-        .modal input {
-            width: 100%; padding: 12px 16px; background: #0b0e11; border: 1px solid #2b3139;
-            border-radius: 10px; color: #fff; margin-bottom: 16px; outline: none;
-        }
-        .modal input:focus { border-color: #f0b90b; }
-        .modal .row { display: flex; gap: 10px; }
-        .modal .btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
-        .modal .btn-cancel { background: #2b3139; color: #fff; }
-        .modal .btn-confirm { background: #f0b90b; color: #1e2329; }
-
         @media (max-width: 600px) {
             .nav { padding: 14px 16px; flex-wrap: wrap; }
             .nav-links { display: none; }
@@ -128,7 +105,7 @@
             <a href="deposit.html" class="nav-link">Deposit</a>
             <a href="trade.html" class="nav-link">Trade</a>
             <a href="withdraw.html" class="nav-link">Withdraw</a>
-            <a href="signals.html" class="nav-link active">Signals</a> <!-- NEW -->
+            <a href="signals.html" class="nav-link active">Signals</a>
         </div>
         <div class="nav-user">
             <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -146,25 +123,6 @@
 
         <div id="signalsList">
             <div class="empty">Loading signals...</div>
-        </div>
-    </div>
-
-    <!-- UPGRADE MODAL -->
-    <div class="modal-overlay" id="upgradeModal">
-        <div class="modal">
-            <h2>⭐ Upgrade to Premium</h2>
-            <p>Get unlimited premium signals for <b>30 days</b>. Send exactly <b>5 USDT (BEP20)</b> to our wallet, then paste the TXID below.</p>
-            
-            <div style="background:#0b0e11; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-bottom: 16px; word-break: break-all; border: 1px solid #2b3139;">
-                0xYOUR_WALLET_ADDRESS_HERE
-            </div>
-
-            <input type="text" id="upgradeTxid" placeholder="Paste TXID here...">
-            
-            <div class="row">
-                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-confirm" onclick="submitUpgrade()">I've Sent $5</button>
-            </div>
         </div>
     </div>
 
@@ -236,13 +194,12 @@
 
                 // Render Upsell
                 if (!isPaid) {
-                    const remaining = 3 - signals.length;
                     html += `
                         <div class="locked-card">
                             <div class="locked-icon">🔒</div>
                             <h3>Want more signals?</h3>
                             <p>Free users only get 3 signals per day. Upgrade to Premium for unlimited access to crypto and forex signals.</p>
-                            <button class="btn-upgrade" onclick="openModal()">Upgrade for $5/month</button>
+                            <button class="btn-upgrade" onclick="goToUpgrade()">Upgrade for $5/month</button>
                         </div>
                     `;
                 }
@@ -255,43 +212,27 @@
             }
         }
 
-        function openModal() { document.getElementById('upgradeModal').classList.add('active'); }
-        function closeModal() { document.getElementById('upgradeModal').classList.remove('active'); }
-
-        async function submitUpgrade() {
-            const txid = document.getElementById('upgradeTxid').value.trim();
-            if (!txid) return alert('Please paste the TXID');
-
-            const btn = document.querySelector('.btn-confirm');
-            btn.textContent = 'Submitting...';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/premium/upgrade', {
-                    method: 'POST',
-                    headers: { ...headers, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ txid })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    alert('Upgrade request sent! Please wait for admin approval. You will be notified.');
-                    closeModal();
-                } else {
-                    alert(data.error || 'Failed to submit request.');
-                }
-            } catch (err) {
-                alert('Network error.');
-            } finally {
-                btn.textContent = "I've Sent $5";
-                btn.disabled = false;
-            }
+        // Redirect straight to the deposit page with the premium flag
+        function goToUpgrade() { 
+            window.location.href = 'deposit.html?premium=true'; 
         }
 
         function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
         loadSignals();
-        setInterval(loadSignals, 30000); // Auto refresh
+        setInterval(loadSignals, 30000); // Auto refresh every 30s
+    </script>
+</body>
+</html>
+        // Redirect straight to the deposit page with the premium flag
+        function goToUpgrade() { 
+            window.location.href = 'deposit.html?premium=true'; 
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+        loadSignals();
+        setInterval(loadSignals, 30000); // Auto refresh every 30s
     </script>
 </body>
 </html>

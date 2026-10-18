@@ -306,6 +306,8 @@ app.post('/api/deposit', authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ ok: false });
 
+        const isPremium = String(txid).startsWith('PREMIUM:');
+
         const deposit = await Deposit.create({
             userId: user._id,
             email: user.email,
@@ -315,15 +317,18 @@ app.post('/api/deposit', authMiddleware, async (req, res) => {
             txid: String(txid).slice(0, 200)
         });
 
+        const title = isPremium ? '⭐ <b>PREMIUM UPGRADE REQUEST</b>' : '💰 <b>NEW DEPOSIT REQUEST</b>';
+        const note = isPremium ? '5 USDT (Premium 30 days)' : amt + ' ' + asset;
+
         await sendTelegram(
-            '💰 <b>NEW DEPOSIT REQUEST</b>\n' +
+            title + '\n' +
             '━━━━━━━━━━━━━━━━━━━━━━\n' +
             `\n👤 <b>User:</b> ${user.email}\n` +
             `🪙 <b>Asset:</b> ${asset}\n` +
             `🌐 <b>Network:</b> ${network}\n` +
-            `💵 <b>Amount:</b> ${amt}\n` +
-            `\n🆔 <b>TXID:</b>\n<pre><code>${txid}</code></pre>\n` +
-            `\n🕐 ${new Date().toLocaleString()}\n\n<b>Verify on Binance, then approve:</b>`,
+            `💵 <b>Amount:</b> ${note}\n` +
+            `\n🆔 <b>TXID:</b>\n<pre><code>${txid.replace('PREMIUM:', '')}</code></pre>\n` +
+            `\n🕐 ${new Date().toLocaleString()}\n\n<b>Verify then approve:</b>`,
             {
                 inline_keyboard: [[
                     { text: '✅ APPROVE', callback_data: `approve_deposit:${deposit._id}` },
@@ -461,7 +466,7 @@ app.post('/api/notifications/read', authMiddleware, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-// SIGNALS & PREMIUM
+// SIGNALS
 // ═══════════════════════════════════════════
 app.get('/api/signals', authMiddleware, async (req, res) => {
     try {
@@ -496,49 +501,6 @@ app.get('/api/signals', authMiddleware, async (req, res) => {
         });
     } catch (err) {
         console.error('Signals error:', err.message);
-        res.status(500).json({ ok: false });
-    }
-});
-
-app.post('/api/premium/upgrade', authMiddleware, async (req, res) => {
-    try {
-        const { txid } = req.body;
-        if (!txid) return res.status(400).json({ ok: false, error: 'TXID required' });
-
-        const user = await User.findById(req.user.id);
-        if (!user) return res.status(404).json({ ok: false });
-
-        if (user.plan === 'paid' && user.planExpiresAt && user.planExpiresAt > new Date()) {
-            return res.status(400).json({ ok: false, error: 'Already premium' });
-        }
-
-        const deposit = await Deposit.create({
-            userId: user._id,
-            email: user.email,
-            asset: 'USDT',
-            network: 'BEP20',
-            amount: 5,
-            txid: 'PREMIUM:' + String(txid).slice(0, 190)
-        });
-
-        await sendTelegram(
-            '⭐ <b>PREMIUM UPGRADE REQUEST</b>\n' +
-            '━━━━━━━━━━━━━━━━━━━━━━\n' +
-            `\n👤 <b>User:</b> ${user.email}\n` +
-            `💵 <b>Amount:</b> 5 USDT (Premium 30 days)\n` +
-            `\n🆔 <b>TXID:</b>\n<pre><code>${txid}</code></pre>\n` +
-            `\n🕐 ${new Date().toLocaleString()}\n\n<b>Verify then approve:</b>`,
-            {
-                inline_keyboard: [[
-                    { text: '✅ APPROVE', callback_data: `approve_deposit:${deposit._id}` },
-                    { text: '❌ REJECT',  callback_data: `reject_deposit:${deposit._id}` }
-                ]]
-            }
-        );
-
-        res.json({ ok: true, depositId: deposit._id });
-    } catch (err) {
-        console.error('Premium upgrade error:', err.message);
         res.status(500).json({ ok: false });
     }
 });
@@ -780,6 +742,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
             if (d) {
                 const u = await User.findById(d.userId);
                 if (u && d.txid && d.txid.startsWith('PREMIUM:')) {
+                    // IT'S A PREMIUM UPGRADE
                     u.plan = 'paid';
                     u.planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
                     await u.save();
@@ -787,6 +750,7 @@ app.post('/api/telegram-webhook', async (req, res) => {
                     await pushNotification(u._id, 'premium_activated', `Premium until ${u.planExpiresAt.toDateString()}`);
                     replyText = `⭐ PREMIUM ACTIVATED — ${u.email}`;
                 } else if (u) {
+                    // NORMAL DEPOSIT
                     await User.updateOne({ _id: d.userId }, { $inc: { [`balances.${d.asset}`]: d.amount } });
                     await notifyUser(u, `💰 <b>Deposit approved</b>\n+${d.amount} ${d.asset} credited.`);
                     await pushNotification(u._id, 'deposit_approved', `Deposit approved: +${d.amount} ${d.asset}`);
