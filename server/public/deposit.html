@@ -542,38 +542,36 @@
             window.location.href = 'login.html';
         }
 
-        // Poll balance after deposit submitted
+                // Poll balance after deposit submitted
         let pollInterval = null;
         function startPollingBalance() {
             if (pollInterval) return;
             pollInterval = setInterval(async () => {
                 try {
-                    // Added ?t= to bust any browser/server cache
-                    const res = await fetch('/api/me?t=' + Date.now(), { headers: pollHeaders });
+                    const res = await fetch('/api/me', { 
+                        headers: { 'Authorization': 'Bearer ' + token } 
+                    });
                     const data = await res.json();
                     
                     if (data.ok) {
-                        // 🚨 STRICT CHECK: If premium, ONLY wait for plan change
-                        if (isPremium) {
-                            if (data.user.plan === 'paid') {
-                                window.location.href = 'signals.html';
+                        // If premium, check if plan is paid
+                        if (isPremium && data.user.plan === 'paid') {
+                            clearInterval(pollInterval);
+                            window.location.href = 'signals.html';
+                        } 
+                        // If normal deposit, check if balance increased
+                        else if (!isPremium) {
+                            const b = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
+                            if (b.USDT > 0 || b.BTC > 0 || b.ETH > 0) {
+                                clearInterval(pollInterval);
+                                window.location.href = 'dashboard.html';
                             }
-                            return; // Do NOTHING else if not approved yet
-                        }
-
-                        // Normal deposit check
-                        const balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
-                        const usdt = Number(balances.USDT || 0);
-                        const btc = Number(balances.BTC || 0);
-                        const eth = Number(balances.ETH || 0);
-
-                        if (usdt > 0 || btc > 0 || eth > 0) {
-                            window.location.href = 'dashboard.html';
-                            return;
                         }
                     }
-                } catch (err) {}
-            }, 3000); // Checks every 3 seconds
+                } catch (err) {
+                    console.error('Polling error:', err);
+                }
+            }, 2000); // Check every 2 seconds
         }
 
         // Init
