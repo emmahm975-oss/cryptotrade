@@ -43,7 +43,7 @@
 
         .container { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
 
-        /* NEW: PREMIUM BANNER */
+        /* PREMIUM BANNER */
         .premium-banner {
             display: none; background: rgba(240,185,11,.1); border: 1px solid rgba(240,185,11,.3);
             border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;
@@ -251,12 +251,6 @@
             border: 1px solid rgba(246,70,93,.3);
             color: #f6465d;
         }
-        .message.success {
-            display: block;
-            background: rgba(14,203,129,.1);
-            border: 1px solid rgba(14,203,129,.3);
-            color: #0ecb81;
-        }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -280,7 +274,6 @@
             <a href="deposit.html" class="nav-link active">Deposit</a>
             <a href="trade.html" class="nav-link">Trade</a>
             <a href="withdraw.html" class="nav-link">Withdraw</a>
-            <!-- NEW: Signals Link -->
             <a href="signals.html" class="nav-link">Signals</a> 
         </div>
         <div class="nav-user">
@@ -291,12 +284,11 @@
 
     <div class="container">
 
-        <!-- NEW: PREMIUM BANNER -->
         <div class="premium-banner" id="premiumBanner">
             ⭐ <b>Premium Upgrade:</b> You are purchasing 30 days of Premium access. Please send exactly <b>5 USDT</b> to the address below.
         </div>
 
-        <!-- STEP 1: Coin Select -->
+        <!-- STEP 1 -->
         <div class="card">
             <h2>1. Select Coin</h2>
             <div class="coins">
@@ -318,17 +310,13 @@
             </div>
         </div>
 
-        <!-- STEP 2: Send to Address -->
+        <!-- STEP 2 -->
         <div class="card">
             <h2>2. Send to this Address</h2>
-
             <div id="networkSelector" style="display:none">
                 <div class="address-label" style="margin-bottom:10px">Choose Network</div>
-                <div class="networks" id="networks">
-                    <!-- filled by JS -->
-                </div>
+                <div class="networks" id="networks"></div>
             </div>
-
             <div class="address-box">
                 <div class="address-label" id="addrLabel">Address</div>
                 <div class="address-row">
@@ -336,13 +324,12 @@
                     <button class="copy-btn" onclick="copyAddress()" id="copyBtn">Copy</button>
                 </div>
             </div>
-
             <div class="warning" id="warning">
                 <strong>⚠️ IMPORTANT:</strong> Only send <span id="warnAsset">USDT</span> on the <span id="warnNetwork">TRC20</span> network to this address. Wrong network = permanent loss.
             </div>
         </div>
 
-        <!-- STEP 3: Submit TXID -->
+        <!-- STEP 3 -->
         <div class="card">
             <h2>3. Submit Transaction ID</h2>
             <p style="color:#848e9c;font-size:13px;margin-bottom:16px;line-height:1.5;">
@@ -388,8 +375,6 @@
         if (!token) window.location.href = 'login.html';
 
         const headers = { 'Authorization': 'Bearer ' + token };
-
-        // NEW: Check if they came from the Premium upgrade button
         const urlParams = new URLSearchParams(window.location.search);
         const isPremium = urlParams.get('premium') === 'true';
 
@@ -410,10 +395,9 @@
         let currentNetwork = 'TRC20';
 
         function selectCoin(coin, el) {
-            if (isPremium && coin !== 'USDT') return; // Force USDT for premium
+            if (isPremium && coin !== 'USDT') return; 
 
             currentCoin = coin;
-
             document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
 
@@ -434,7 +418,6 @@
                 networkSelector.style.display = 'none';
                 currentNetwork = networkKeys[0];
             }
-
             updateAddress();
         }
 
@@ -470,7 +453,6 @@
             });
         }
 
-        // Submit
         const form = document.getElementById('depositForm');
         const msg = document.getElementById('message');
 
@@ -482,7 +464,6 @@
             let txid = document.getElementById('txid').value.trim();
             const btn = document.getElementById('submitBtn');
 
-            // 🚨 NEW: Tag the TXID if it's a premium upgrade
             if (isPremium) {
                 txid = 'PREMIUM:' + txid;
             }
@@ -523,7 +504,6 @@
             }
         });
 
-        // User info + history
         fetch('/api/me', { headers })
             .then(r => r.json())
             .then(data => {
@@ -559,7 +539,7 @@
             window.location.href = 'login.html';
         }
 
-                 // Poll balance after deposit submitted
+        // Poll balance after deposit submitted
         let pollInterval = null;
         function startPollingBalance() {
             if (pollInterval) return;
@@ -567,42 +547,40 @@
                 try {
                     const res = await fetch('/api/me', { headers });
                     const data = await res.json();
+                    
                     if (data.ok) {
+                        // 🚨 CRITICAL FIX: If it's premium, IGNORE balance. ONLY check plan.
+                        if (isPremium) {
+                            if (data.user.plan === 'paid') {
+                                window.location.href = 'signals.html';
+                            }
+                            return; // Stops here if not approved yet
+                        }
+
+                        // For normal deposits, check if balance increased
                         const balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
                         const usdt = Number(balances.USDT || 0);
                         const btc = Number(balances.BTC || 0);
                         const eth = Number(balances.ETH || 0);
-
-                        // 1. If the user is now premium, go to signals.html
-                        if (data.user.plan === 'paid') {
-                            window.location.href = 'signals.html';
-                            return;
-                        }
                         
-                        // 2. If it was a normal deposit and balance went up, go to dashboard
                         if (usdt > 0 || btc > 0 || eth > 0) {
                             window.location.href = 'dashboard.html';
-                            return;
                         }
                     }
                 } catch (err) {}
             }, 3000); // Checks every 3 seconds
-        }              
+        }
 
         // Init
         selectCoin('USDT', document.querySelector('.coin-btn.active'));
         loadHistory();
 
-        // 🚨 NEW: Lock the form if it's a premium upgrade
         if (isPremium) {
             document.getElementById('premiumBanner').classList.add('show');
-            
-            // Lock the amount to 5
             const amountInput = document.getElementById('amount');
             amountInput.value = '5';
             amountInput.readOnly = true;
             
-            // Visually disable BTC and ETH
             document.querySelectorAll('.coin-btn').forEach(btn => {
                 if (btn.dataset.coin !== 'USDT') {
                     btn.style.opacity = '0.5';
