@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signals — CryptoTrade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0b0e11; color: #eaecef; min-height: 100vh; }
+
+        /* ===== NAV ===== */
+        .nav {
+            background: #1e2329; border-bottom: 1px solid #2b3139;
+            padding: 16px 32px; display: flex; align-items: center; gap: 24px;
+        }
+        .nav-logo { font-size: 22px; font-weight: 900; color: #f0b90b; text-decoration: none; }
+        .nav-links { display: flex; gap: 8px; flex: 1; }
+        .nav-link {
+            color: #848e9c; text-decoration: none; padding: 8px 16px;
+            border-radius: 8px; font-size: 14px; font-weight: 700;
+            transition: background .2s, color .2s;
+        }
+        .nav-link:hover, .nav-link.active { background: #2b3139; color: #eaecef; }
+        .nav-user { display: flex; align-items: center; gap: 12px; }
+        .logout-btn {
+            background: transparent; color: #f6465d; border: 1px solid #2b3139;
+            padding: 8px 16px; border-radius: 8px; font-size: 13px;
+            font-weight: 700; cursor: pointer;
+        }
+        .logout-btn:hover { border-color: #f6465d; }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+
+        /* ===== HEADER ===== */
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+        .header h1 { font-size: 28px; font-weight: 800; }
+        .header p { color: #848e9c; font-size: 14px; margin-top: 4px; }
+        .plan-badge {
+            padding: 6px 14px; border-radius: 20px; font-size: 13px;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .plan-badge.free { background: rgba(132,142,156,.15); color: #848e9c; }
+        .plan-badge.paid { background: rgba(240,185,11,.15); color: #f0b90b; }
+
+        /* ===== SIGNAL CARD ===== */
+        .signal-card {
+            background: #1e2329; border: 1px solid #2b3139; border-radius: 14px;
+            padding: 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 16px;
+        }
+        .signal-card:hover { border-color: #3b424b; }
+        
+        .sig-info { display: flex; flex-direction: column; gap: 6px; }
+        .sig-pair { font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 12px; }
+        .sig-side { font-size: 12px; padding: 4px 10px; border-radius: 6px; font-weight: 800; }
+        .sig-side.buy { background: rgba(14,203,129,.15); color: #0ecb81; }
+        .sig-side.sell { background: rgba(246,70,93,.15); color: #f6465d; }
+        .sig-meta { color: #848e9c; font-size: 12px; }
+        
+        .sig-levels { display: flex; gap: 24px; }
+        .level { display: flex; flex-direction: column; gap: 4px; }
+        .level span { font-size: 11px; color: #848e9c; text-transform: uppercase; font-weight: 700; }
+        .level strong { font-size: 16px; font-weight: 800; }
+        .level.entry strong { color: #eaecef; }
+        .level.tp strong { color: #0ecb81; }
+        .level.sl strong { color: #f6465d; }
+
+        /* ===== LOCKED CARD ===== */
+        .locked-card {
+            background: linear-gradient(135deg, #1e2329 0%, #14171c 100%);
+            border: 1px dashed #f0b90b; border-radius: 14px;
+            padding: 32px 20px; text-align: center; margin-bottom: 16px;
+        }
+        .locked-icon { font-size: 32px; margin-bottom: 12px; }
+        .locked-card h3 { font-size: 20px; font-weight: 800; color: #f0b90b; margin-bottom: 8px; }
+        .locked-card p { color: #848e9c; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+        
+        .btn-upgrade {
+            background: #f0b90b; color: #1e2329; border: none;
+            padding: 14px 28px; border-radius: 10px; font-size: 15px;
+            font-weight: 800; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 0.5px; transition: opacity .2s;
+        }
+        .btn-upgrade:hover { opacity: 0.9; }
+
+        .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1e2329; border: 1px solid #2b3139; border-radius: 16px;
+            width: 100%; max-width: 450px; padding: 28px;
+        }
+        .modal h2 { font-size: 22px; margin-bottom: 8px; color: #f0b90b; }
+        .modal p { font-size: 14px; color: #848e9c; margin-bottom: 20px; line-height: 1.5; }
+        .modal input {
+            width: 100%; padding: 12px 16px; background: #0b0e11; border: 1px solid #2b3139;
+            border-radius: 10px; color: #fff; margin-bottom: 16px; outline: none;
+        }
+        .modal input:focus { border-color: #f0b90b; }
+        .modal .row { display: flex; gap: 10px; }
+        .modal .btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        .modal .btn-cancel { background: #2b3139; color: #fff; }
+        .modal .btn-confirm { background: #f0b90b; color: #1e2329; }
+
+        @media (max-width: 600px) {
+            .nav { padding: 14px 16px; flex-wrap: wrap; }
+            .nav-links { display: none; }
+            .container { padding: 20px 16px; }
+            .signal-card { flex-direction: column; align-items: stretch; }
+            .sig-levels { justify-content: space-between; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="dashboard.html" class="nav-logo">CryptoTrade</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="deposit.html" class="nav-link">Deposit</a>
+            <a href="trade.html" class="nav-link">Trade</a>
+            <a href="withdraw.html" class="nav-link">Withdraw</a>
+            <a href="signals.html" class="nav-link active">Signals</a> <!-- NEW -->
+        </div>
+        <div class="nav-user">
+            <button class="logout-btn" onclick="logout()">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Market Signals</h1>
+                <p>Expert-analyzed entries, take profits, and stop losses.</p>
+            </div>
+            <div id="planBadge" class="plan-badge free">FREE PLAN</div>
+        </div>
+
+        <div id="signalsList">
+            <div class="empty">Loading signals...</div>
+        </div>
+    </div>
+
+    <!-- UPGRADE MODAL -->
+    <div class="modal-overlay" id="upgradeModal">
+        <div class="modal">
+            <h2>⭐ Upgrade to Premium</h2>
+            <p>Get unlimited premium signals for <b>30 days</b>. Send exactly <b>5 USDT (BEP20)</b> to our wallet, then paste the TXID below.</p>
+            
+            <div style="background:#0b0e11; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-bottom: 16px; word-break: break-all; border: 1px solid #2b3139;">
+                0xYOUR_WALLET_ADDRESS_HERE
+            </div>
+
+            <input type="text" id="upgradeTxid" placeholder="Paste TXID here...">
+            
+            <div class="row">
+                <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-confirm" onclick="submitUpgrade()">I've Sent $5</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        const headers = { 'Authorization': 'Bearer ' + token };
+        let isPaid = false;
+
+        async function loadSignals() {
+            try {
+                const res = await fetch('/api/signals', { headers });
+                if (res.status === 401) { localStorage.clear(); window.location.href = 'login.html'; return; }
+                
+                const data = await res.json();
+                if (!data.ok) return;
+
+                isPaid = data.plan === 'paid';
+                
+                // Update Badge
+                const badge = document.getElementById('planBadge');
+                if (isPaid) {
+                    badge.className = 'plan-badge paid';
+                    badge.textContent = '⭐ PREMIUM';
+                } else {
+                    badge.className = 'plan-badge free';
+                    badge.textContent = 'FREE PLAN';
+                }
+
+                const list = document.getElementById('signalsList');
+                const signals = data.signals || [];
+
+                let html = '';
+
+                // Render Signals
+                if (signals.length === 0) {
+                    html += '<div class="empty">No signals available right now. Check back later.</div>';
+                } else {
+                    html += signals.map(s => `
+                        <div class="signal-card">
+                            <div class="sig-info">
+                                <div class="sig-pair">
+                                    ${s.pair}
+                                    <span class="sig-side ${s.side}">${s.side.toUpperCase()}</span>
+                                </div>
+                                <div class="sig-meta">
+                                    ${new Date(s.createdAt).toLocaleString()} 
+                                    ${s.tier === 'paid' ? '· ⭐ Premium' : '· Free'}
+                                </div>
+                            </div>
+                            <div class="sig-levels">
+                                <div class="level entry">
+                                    <span>Entry</span>
+                                    <strong>${s.entry}</strong>
+                                </div>
+                                <div class="level tp">
+                                    <span>Target (TP)</span>
+                                    <strong>${s.tp}</strong>
+                                </div>
+                                <div class="level sl">
+                                    <span>Stop (SL)</span>
+                                    <strong>${s.sl}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Render Upsell
+                if (!isPaid) {
+                    const remaining = 3 - signals.length;
+                    html += `
+                        <div class="locked-card">
+                            <div class="locked-icon">🔒</div>
+                            <h3>Want more signals?</h3>
+                            <p>Free users only get 3 signals per day. Upgrade to Premium for unlimited access to crypto and forex signals.</p>
+                            <button class="btn-upgrade" onclick="openModal()">Upgrade for $5/month</button>
+                        </div>
+                    `;
+                }
+
+                list.innerHTML = html;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('signalsList').innerHTML = '<div class="empty">Error loading signals.</div>';
+            }
+        }
+
+        function openModal() { document.getElementById('upgradeModal').classList.add('active'); }
+        function closeModal() { document.getElementById('upgradeModal').classList.remove('active'); }
+
+        async function submitUpgrade() {
+            const txid = document.getElementById('upgradeTxid').value.trim();
+            if (!txid) return alert('Please paste the TXID');
+
+            const btn = document.querySelector('.btn-confirm');
+            btn.textContent = 'Submitting...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/premium/upgrade', {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ txid })
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    alert('Upgrade request sent! Please wait for admin approval. You will be notified.');
+                    closeModal();
+                } else {
+                    alert(data.error || 'Failed to submit request.');
+                }
+            } catch (err) {
+                alert('Network error.');
+            } finally {
+                btn.textContent = "I've Sent $5";
+                btn.disabled = false;
+            }
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+        loadSignals();
+        setInterval(loadSignals, 30000); // Auto refresh
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard — CryptoTrade</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box;
@@ -15,7 +15,7 @@
             background: #1e2329;
             border-bottom: 1px solid #2b3139;
             padding: 16px 32px;
-            display: flex; align-items: center; gap: 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
         }
         .nav-logo {
             font-size: 22px; font-weight: 900; color: #f0b90b;
@@ -34,7 +34,17 @@
         .nav-user {
             display: flex; align-items: center; gap: 12px;
         }
+        .user-info { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
         .user-email { font-size: 13px; color: #848e9c; }
+        
+        /* Badge for Plan */
+        .plan-badge {
+            font-size: 10px; padding: 2px 8px; border-radius: 10px;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .plan-badge.free { background: rgba(132,142,156,.15); color: #848e9c; }
+        .plan-badge.paid { background: rgba(240,185,11,.15); color: #f0b90b; }
+
         .logout-btn {
             background: transparent; color: #f6465d;
             border: 1px solid #2b3139; padding: 8px 16px;
@@ -105,6 +115,7 @@
             color: #eaecef;
             transition: all .2s;
             cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
         }
         .action-btn:hover {
             border-color: #f0b90b;
@@ -174,13 +185,18 @@
 
         .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
 
-        @media (max-width: 600px) {
+        /* ===== MOBILE RESPONSIVE (ANDROID & IPHONE) ===== */
+        @media (max-width: 768px) {
             .nav { padding: 14px 16px; gap: 12px; flex-wrap: wrap; }
             .nav-logo { font-size: 18px; }
-            .nav-links { display: none; }
-            .user-email { display: none; }
+            .nav-links { display: none; } /* Hide links on mobile to save space */
+            .user-info { display: none; } /* Hide email on mobile */
             .container { padding: 20px 16px; }
             .portfolio-value { font-size: 32px; }
+            .action-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            /* Make table scroll horizontally smoothly */
+            .table-wrap { -webkit-overflow-scrolling: touch; }
         }
     </style>
 </head>
@@ -193,9 +209,13 @@
             <a href="deposit.html" class="nav-link">Deposit</a>
             <a href="trade.html" class="nav-link">Trade</a>
             <a href="withdraw.html" class="nav-link">Withdraw</a>
+            <a href="signals.html" class="nav-link">Signals</a> <!-- NEW -->
         </div>
         <div class="nav-user">
-            <span class="user-email" id="userEmail">—</span>
+            <div class="user-info">
+                <span class="user-email" id="userEmail">—</span>
+                <span class="plan-badge free" id="planBadge">FREE</span> <!-- NEW -->
+            </div>
             <button class="logout-btn" onclick="logout()">Log Out</button>
         </div>
     </nav>
@@ -271,9 +291,9 @@
                 <div class="action-icon">💸</div>
                 <div class="action-label">Withdraw</div>
             </a>
-            <a href="deposit.html" class="action-btn">
-                <div class="action-icon">📜</div>
-                <div class="action-label">History</div>
+            <a href="signals.html" class="action-btn"> <!-- NEW -->
+                <div class="action-icon">📈</div>
+                <div class="action-label">Signals</div>
             </a>
         </div>
 
@@ -318,6 +338,17 @@
                 const data = await res.json();
                 if (data.ok) {
                     document.getElementById('userEmail').textContent = data.user.email;
+                    
+                    // Check Premium Plan
+                    const planBadge = document.getElementById('planBadge');
+                    if (data.user.plan === 'paid' && (!data.user.planExpiresAt || new Date(data.user.planExpiresAt) > new Date())) {
+                        planBadge.className = 'plan-badge paid';
+                        planBadge.textContent = '⭐ PREMIUM';
+                    } else {
+                        planBadge.className = 'plan-badge free';
+                        planBadge.textContent = 'FREE';
+                    }
+
                     balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
                     renderBalances();
 
@@ -333,7 +364,6 @@
                     } else if (data.user.status === 'active') {
                         pendingEl.style.display = 'none';
                         
-                        // Show Approved banner if they just got approved
                         if (lastKnownStatus === 'pending') {
                             approvedEl.style.display = 'block';
                             setTimeout(function () {
@@ -344,7 +374,6 @@
                         }
                         lastKnownStatus = 'active';
 
-                        // Show Deposit Reminder if active but zero balance
                         const total = Number(balances.USDT || 0) + Number(balances.BTC || 0) + Number(balances.ETH || 0);
                         reminderEl.style.display = (total === 0) ? 'block' : 'none';
                     }
