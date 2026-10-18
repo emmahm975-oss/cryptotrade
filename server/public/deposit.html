@@ -374,10 +374,7 @@
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'login.html';
 
-        // Fix: Only declare headers once here
         const headers = { 'Authorization': 'Bearer ' + token };
-        const pollHeaders = { 'Authorization': 'Bearer ' + token, 'Cache-Control': 'no-cache' };
-
         const urlParams = new URLSearchParams(window.location.search);
         const isPremium = urlParams.get('premium') === 'true';
 
@@ -542,7 +539,7 @@
             window.location.href = 'login.html';
         }
 
-                // Poll balance after deposit submitted
+        // Poll balance after deposit submitted
         let pollInterval = null;
         function startPollingBalance() {
             if (pollInterval) return;
