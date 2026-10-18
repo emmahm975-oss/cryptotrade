@@ -421,6 +421,20 @@ app.post('/api/admin/ban-user', adminAuth, async (req, res) => {
     res.json({ ok: true });
 });
 
+app.delete('/api/admin/delete-user/:userId', adminAuth, async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        await User.findByIdAndDelete(userId);
+        await Deposit.deleteMany({ userId: userId });
+        await Trade.deleteMany({ userId: userId });
+        await Withdrawal.deleteMany({ userId: userId });
+        res.json({ ok: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false });
+    }
+});
+
 app.get('/api/admin/deposits', adminAuth, async (req, res) => {
     const list = await Deposit.find().sort({ createdAt: -1 });
     res.json({ ok: true, deposits: list });

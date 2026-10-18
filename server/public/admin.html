@@ -316,8 +316,9 @@
                             <td>${u.country || '-'}</td>
                             <td><span class="badge ${u.status}">${u.status}</span></td>
                             <td>
-                                ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
+                                                                ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
                                 ${u.status !== 'banned' ? `<button class="btn-reject" onclick="banUser('${u._id}')">Ban</button>` : ''}
+                                <button class="btn-reject" onclick="deleteUser('${u._id}', '${u.email}')">🗑️ Delete</button>
                             </td>
                         </tr>
                     `).join('');
@@ -367,6 +368,25 @@
                 headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
                 body: JSON.stringify({ userId })
             }).then(() => loadUsers());
+        }
+
+                function deleteUser(userId, email) {
+            if (!confirm('⚠️ DELETE user ' + email + ' permanently?\n\nThis will remove:\n- The user\n- All their deposits\n- All their trades\n- All their withdrawals\n\nThis cannot be undone.')) return;
+
+            fetch('/api/admin/delete-user/' + userId, {
+                method: 'DELETE',
+                headers: { 'x-admin-token': adminToken }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('User deleted: ' + email);
+                    loadUsers();
+                } else {
+                    alert('Delete failed');
+                }
+            })
+            .catch(err => alert('Error: ' + err.message));
         }
 
         function approveDeposit(depositId) {
