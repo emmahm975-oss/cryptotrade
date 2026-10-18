@@ -143,9 +143,9 @@
             background: #1e2329;
             border: 1px solid #2b3139;
             border-radius: 14px;
-            overflow: hidden;
+            overflow-x: auto;
         }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
         thead {
             background: #0b0e11;
             border-bottom: 1px solid #2b3139;
@@ -158,11 +158,13 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 700;
+            white-space: nowrap;
         }
         td {
             padding: 14px 16px;
             font-size: 14px;
             border-bottom: 1px solid #2b3139;
+            white-space: nowrap;
         }
         tr:last-child td { border-bottom: none; }
         tr:hover { background: #252a31; }
@@ -200,11 +202,19 @@
 
     <div class="container">
 
-                        <div id="pendingBanner" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
+        <!-- Deposit Reminder Banner -->
+        <div id="depositReminder" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
+            💰 <strong>Deposit to start trading!</strong><br>
+            Your account has no funds yet. <a href="deposit.html" style="color:#f0b90b;text-decoration:underline;">Deposit now</a> to start trading.
+        </div>
+
+        <!-- Pending Banner -->
+        <div id="pendingBanner" style="display:none;background:rgba(240,185,11,.1);border:1px solid rgba(240,185,11,.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#f0b90b;font-size:14px;font-weight:700;line-height:1.5;">
             ⏳ <strong>Account Pending Approval</strong><br>
             Your account is being reviewed by our team. You'll be able to deposit and trade once approved. This usually takes a few minutes.
         </div>
 
+        <!-- Approved Banner -->
         <div id="approvedBanner" style="display:none;background:rgba(14,203,129,.15);border:1px solid rgba(14,203,129,.4);border-radius:12px;padding:16px 20px;margin-bottom:20px;color:#0ecb81;font-size:14px;font-weight:700;line-height:1.5;">
             ✅ <strong>Account Approved!</strong><br>
             Your account has been approved. You can now deposit, trade, and withdraw.
@@ -295,8 +305,7 @@
         const headers = { 'Authorization': 'Bearer ' + token };
         let prices = { BTC: 0, ETH: 0, USDT: 1 };
         let balances = { BTC: 0, ETH: 0, USDT: 0 };
-
-                    let lastKnownStatus = null;
+        let lastKnownStatus = null;
 
         async function loadMe() {
             try {
@@ -314,31 +323,36 @@
 
                     const pendingEl  = document.getElementById('pendingBanner');
                     const approvedEl = document.getElementById('approvedBanner');
+                    const reminderEl = document.getElementById('depositReminder');
 
                     if (data.user.status === 'pending') {
                         pendingEl.style.display = 'block';
                         approvedEl.style.display = 'none';
+                        reminderEl.style.display = 'none';
                         lastKnownStatus = 'pending';
                     } else if (data.user.status === 'active') {
-                        // Was pending before? Show the "Approved!" banner
+                        pendingEl.style.display = 'none';
+                        
+                        // Show Approved banner if they just got approved
                         if (lastKnownStatus === 'pending') {
-                            pendingEl.style.display = 'none';
                             approvedEl.style.display = 'block';
-                            // Hide the success banner after 6 seconds
                             setTimeout(function () {
                                 approvedEl.style.display = 'none';
                             }, 6000);
                         } else {
-                            pendingEl.style.display = 'none';
                             approvedEl.style.display = 'none';
                         }
                         lastKnownStatus = 'active';
+
+                        // Show Deposit Reminder if active but zero balance
+                        const total = Number(balances.USDT || 0) + Number(balances.BTC || 0) + Number(balances.ETH || 0);
+                        reminderEl.style.display = (total === 0) ? 'block' : 'none';
                     }
                 }
             } catch (err) {
                 console.error(err);
             }
-        }    
+        }
 
         async function loadPrices() {
             try {

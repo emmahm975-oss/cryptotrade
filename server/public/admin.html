@@ -75,25 +75,15 @@
 
         .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
-        .tabs {
-            display: flex; gap: 8px; margin-bottom: 24px;
-        }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
         .tab {
             padding: 12px 20px;
-            background: #1e2329;
-            border: 1px solid #2b3139;
-            border-radius: 10px;
-            color: #848e9c;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all .2s;
+            background: #1e2329; border: 1px solid #2b3139;
+            border-radius: 10px; color: #848e9c;
+            font-size: 14px; font-weight: 700;
+            cursor: pointer; transition: all .2s;
         }
-        .tab.active {
-            background: #f0b90b;
-            color: #1e2329;
-            border-color: #f0b90b;
-        }
+        .tab.active { background: #f0b90b; color: #1e2329; border-color: #f0b90b; }
         .tab:hover:not(.active) { border-color: #f0b90b; color: #eaecef; }
 
         .tab-content { display: none; }
@@ -103,37 +93,28 @@
             background: #1e2329;
             border: 1px solid #2b3139;
             border-radius: 14px;
-            overflow: hidden;
+            overflow-x: auto;
         }
-        table { width: 100%; border-collapse: collapse; }
-        thead {
-            background: #0b0e11;
-            border-bottom: 1px solid #2b3139;
-        }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        thead { background: #0b0e11; border-bottom: 1px solid #2b3139; }
         th {
-            text-align: left;
-            padding: 14px 16px;
-            font-size: 12px;
-            color: #848e9c;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 700;
+            text-align: left; padding: 14px 16px;
+            font-size: 12px; color: #848e9c;
+            text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+            white-space: nowrap;
         }
         td {
-            padding: 14px 16px;
-            font-size: 14px;
+            padding: 14px 16px; font-size: 14px;
             border-bottom: 1px solid #2b3139;
+            white-space: nowrap;
         }
         tr:last-child td { border-bottom: none; }
         tr:hover { background: #252a31; }
 
         .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
+            display: inline-block; padding: 4px 10px;
+            border-radius: 20px; font-size: 11px;
+            font-weight: 800; letter-spacing: 0.5px;
             text-transform: uppercase;
         }
         .badge.pending { background: rgba(240,185,11,.15); color: #f0b90b; }
@@ -143,12 +124,9 @@
         .badge.rejected { background: rgba(246,70,93,.15); color: #f6465d; }
 
         .btn-approve, .btn-reject {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            font-size: 12px;
-            font-weight: 800;
-            cursor: pointer;
+            padding: 6px 12px; border-radius: 6px;
+            border: none; font-size: 12px;
+            font-weight: 800; cursor: pointer;
             margin-right: 6px;
         }
         .btn-approve { background: #0ecb81; color: #fff; }
@@ -157,14 +135,7 @@
         .btn-reject:hover { background: #d4354b; }
 
         .empty { text-align: center; padding: 40px 20px; color: #848e9c; font-size: 14px; }
-
-        .txid {
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 12px;
-            color: #848e9c;
-            max-width: 200px;
-            word-break: break-all;
-        }
+        .txid { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; color: #848e9c; max-width: 200px; word-break: break-all; }
 
         .refresh-btn {
             background: #2b3139; color: #eaecef;
@@ -174,11 +145,40 @@
             margin-bottom: 16px;
         }
         .refresh-btn:hover { background: #3b424b; }
+
+        /* ===== MOBILE RESPONSIVE TABLE ===== */
+        @media (max-width: 768px) {
+            table { min-width: 0; }
+            thead { display: none; }
+            table, tbody, tr, td { display: block; width: 100%; }
+            tr {
+                background: #0b0e11; border: 1px solid #2b3139;
+                border-radius: 12px; margin-bottom: 12px;
+                padding: 8px 12px;
+            }
+            td {
+                display: flex; justify-content: space-between;
+                align-items: center; padding: 10px 0;
+                border-bottom: 1px dashed #2b3139;
+                white-space: normal; text-align: right;
+            }
+            td:last-child {
+                border-bottom: none; justify-content: flex-end;
+                gap: 8px; padding-top: 14px;
+            }
+            td::before {
+                content: attr(data-label);
+                font-size: 12px; color: #848e9c;
+                font-weight: 700; text-transform: uppercase;
+                letter-spacing: 0.5px; margin-right: 12px;
+                text-align: left;
+            }
+            td:last-child::before { content: ''; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
     <div class="login-wrap" id="loginWrap">
         <div class="login-card">
             <h1>Admin Panel</h1>
@@ -190,7 +190,6 @@
         </div>
     </div>
 
-    <!-- PANEL -->
     <div class="panel" id="panel">
         <div class="topbar">
             <h1>⚙️ CryptoTrade Admin</h1>
@@ -203,7 +202,6 @@
                 <div class="tab" onclick="switchTab('deposits', this)">💰 Deposits</div>
             </div>
 
-            <!-- USERS -->
             <div class="tab-content active" id="usersTab">
                 <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh</button>
                 <div class="table-wrap">
@@ -225,7 +223,6 @@
                 </div>
             </div>
 
-            <!-- DEPOSITS -->
             <div class="tab-content" id="depositsTab">
                 <button class="refresh-btn" onclick="loadDeposits()">🔄 Refresh</button>
                 <div class="table-wrap">
@@ -310,13 +307,13 @@
                     }
                     body.innerHTML = data.users.map(u => `
                         <tr>
-                            <td>${u.email}</td>
-                            <td>${u.fullName || '-'}</td>
-                            <td>${u.phone || '-'}</td>
-                            <td>${u.country || '-'}</td>
-                            <td><span class="badge ${u.status}">${u.status}</span></td>
-                            <td>
-                                                                ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
+                            <td data-label="Email">${u.email}</td>
+                            <td data-label="Name">${u.fullName || '-'}</td>
+                            <td data-label="Phone">${u.phone || '-'}</td>
+                            <td data-label="Country">${u.country || '-'}</td>
+                            <td data-label="Status"><span class="badge ${u.status}">${u.status}</span></td>
+                            <td data-label="Actions">
+                                ${u.status === 'pending' ? `<button class="btn-approve" onclick="approveUser('${u._id}')">Approve</button>` : ''}
                                 ${u.status !== 'banned' ? `<button class="btn-reject" onclick="banUser('${u._id}')">Ban</button>` : ''}
                                 <button class="btn-reject" onclick="deleteUser('${u._id}', '${u.email}')">🗑️ Delete</button>
                             </td>
@@ -336,13 +333,13 @@
                     }
                     body.innerHTML = data.deposits.map(d => `
                         <tr>
-                            <td>${d.email}</td>
-                            <td>${d.asset}</td>
-                            <td>${d.network}</td>
-                            <td>${d.amount}</td>
-                            <td class="txid">${d.txid}</td>
-                            <td><span class="badge ${d.status}">${d.status}</span></td>
-                            <td>
+                            <td data-label="User">${d.email}</td>
+                            <td data-label="Asset">${d.asset}</td>
+                            <td data-label="Network">${d.network}</td>
+                            <td data-label="Amount">${d.amount}</td>
+                            <td data-label="TXID" class="txid">${d.txid}</td>
+                            <td data-label="Status"><span class="badge ${d.status}">${d.status}</span></td>
+                            <td data-label="Actions">
                                 ${d.status === 'pending' ? `
                                     <button class="btn-approve" onclick="approveDeposit('${d._id}')">Approve</button>
                                     <button class="btn-reject" onclick="rejectDeposit('${d._id}')">Reject</button>
@@ -370,8 +367,8 @@
             }).then(() => loadUsers());
         }
 
-                function deleteUser(userId, email) {
-            if (!confirm('⚠️ DELETE user ' + email + ' permanently?\n\nThis will remove:\n- The user\n- All their deposits\n- All their trades\n- All their withdrawals\n\nThis cannot be undone.')) return;
+        function deleteUser(userId, email) {
+            if (!confirm('⚠️ DELETE user ' + email + ' permanently?\n\nThis will remove:\n- The user\n- All deposits\n- All trades\n- All withdrawals\n\nThis cannot be undone.')) return;
 
             fetch('/api/admin/delete-user/' + userId, {
                 method: 'DELETE',
@@ -406,7 +403,6 @@
             }).then(() => loadDeposits());
         }
 
-        // Auto-load if already logged in
         if (adminToken) {
             fetch('/api/admin/users', { headers: { 'x-admin-token': adminToken } })
                 .then(r => { if (r.ok) showPanel(); });
