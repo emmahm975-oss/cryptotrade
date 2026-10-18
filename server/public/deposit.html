@@ -374,7 +374,10 @@
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'login.html';
 
+        // Fix: Only declare headers once here
         const headers = { 'Authorization': 'Bearer ' + token };
+        const pollHeaders = { 'Authorization': 'Bearer ' + token, 'Cache-Control': 'no-cache' };
+
         const urlParams = new URLSearchParams(window.location.search);
         const isPremium = urlParams.get('premium') === 'true';
 
@@ -545,26 +548,28 @@
             if (pollInterval) return;
             pollInterval = setInterval(async () => {
                 try {
-                    const res = await fetch('/api/me', { headers });
+                    // Added ?t= to bust any browser/server cache
+                    const res = await fetch('/api/me?t=' + Date.now(), { headers: pollHeaders });
                     const data = await res.json();
                     
                     if (data.ok) {
-                        // 🚨 CRITICAL FIX: If it's premium, IGNORE balance. ONLY check plan.
+                        // 🚨 STRICT CHECK: If premium, ONLY wait for plan change
                         if (isPremium) {
                             if (data.user.plan === 'paid') {
                                 window.location.href = 'signals.html';
                             }
-                            return; // Stops here if not approved yet
+                            return; // Do NOTHING else if not approved yet
                         }
 
-                        // For normal deposits, check if balance increased
+                        // Normal deposit check
                         const balances = data.user.balances || { BTC: 0, ETH: 0, USDT: 0 };
                         const usdt = Number(balances.USDT || 0);
                         const btc = Number(balances.BTC || 0);
                         const eth = Number(balances.ETH || 0);
-                        
+
                         if (usdt > 0 || btc > 0 || eth > 0) {
                             window.location.href = 'dashboard.html';
+                            return;
                         }
                     }
                 } catch (err) {}
